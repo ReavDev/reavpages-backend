@@ -1,0 +1,29 @@
+{
+  "name": "reavpages-backend",
+  "version": "1.0.0",
+  "description": "Backend Application for ReavPages",
+  "main": "dist/app.js",
+  "scripts": {
+    "dev": "ts-node src/app.ts",
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "typecheck": "tsc --noEmit && echo Type Checks successfuly completed!",
+    "lint": "eslint \"src/**/*.{ts,js}\" --fix && echo Lint Checks successfully completed!",
+    "format": "prettier --write 'src/**/*.{ts,js,json,md}' && echo Prettier Format successfully completed!"
+  },
+  "author": "ReavDev",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.10.0",
+    "@types/express": "^4.17.21",
+    "eslint": "^9.10.0",
+    "globals": "^15.9.0",
+    "prettier": "^3.3.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.6.0"
+  }
+}
