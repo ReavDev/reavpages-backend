@@ -12,8 +12,8 @@ const EmailService = {
   createTransport() {
     return nodemailer.createTransport({
       ...config.email.smtp,
-      logger: true,
       secure: config.email.smtp.port === 465,
+      logger: config.env === "development",
       debug: config.env === "development",
     });
   },

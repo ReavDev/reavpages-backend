@@ -123,7 +123,7 @@ const config = {
   /**
    * Port number on which the server will run.
    */
-  port: process.env["PORT"] as unknown as number,
+  port: parseInt(process.env["PORT"] as string, 10),
 
   /**
    * MongoDB connection settings.
@@ -147,30 +147,23 @@ const config = {
     /**
      * JWT access token expiration time in minutes.
      */
-    accessExpirationMinutes: process.env[
-      "JWT_ACCESS_EXPIRATION_MINUTES"
-    ] as unknown as number,
+    accessExpirationMinutes: parseInt(process.env["JWT_ACCESS_EXPIRATION_MINUTES"] as string, 10),
 
     /**
      * JWT refresh token expiration time in days.
      */
-    refreshExpirationDays: process.env[
-      "JWT_REFRESH_EXPIRATION_DAYS"
-    ] as unknown as number,
+    refreshExpirationDays: parseInt(process.env["JWT_REFRESH_EXPIRATION_DAYS"] as string, 10),
+
 
     /**
      * JWT reset password token expiration time in minutes.
      */
-    resetPasswordExpirationMinutes: process.env[
-      "JWT_RESET_PASSWORD_EXPIRATION_MINUTES"
-    ] as unknown as number,
+    resetPasswordExpirationMinutes: parseInt(process.env["JWT_RESET_PASSWORD_EXPIRATION_MINUTES"] as string, 10),
 
     /**
      * JWT email verification token expiration time in minutes.
      */
-    verifyEmailExpirationMinutes: process.env[
-      "JWT_VERIFY_EMAIL_EXPIRATION_MINUTES"
-    ] as unknown as number,
+    verifyEmailExpirationMinutes: parseInt(process.env["JWT_VERIFY_EMAIL_EXPIRATION_MINUTES"] as string, 10),
   },
 
   /**
@@ -189,7 +182,7 @@ const config = {
       /**
        * SMTP server port.
        */
-      port: process.env["SMTP_PORT"] as unknown as number,
+      port: parseInt(process.env["SMTP_PORT"] as string, 10),
 
       /**
        * SMTP server authentication credentials.

@@ -14,6 +14,6 @@ import config from "./config";
 export const initializeDatabase = async (): Promise<void> => {
   await mongoose
     .connect(`${config.mongoose.url}/reavpages`)
-    .then(() => console.log("MongoDB connected successfully"))
-    .catch((err) => console.error("MongoDB connection failed", err));
+    .then(() => console.log("Database intialized successfully!"))
+    .catch((err) => console.error("Database connection failed", err));
 };
