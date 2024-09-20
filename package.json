@@ -9,8 +9,7 @@
     "start": "node dist/app.js",
     "typecheck": "tsc --noEmit && echo Type Checks successfuly completed!",
     "lint": "eslint \"src/**/*.{ts,js}\" --fix && echo Lint Checks successfully completed!",
-    "format": "prettier --write 'src/**/*.{ts,js,json,md}' && echo Prettier Format successfully completed!",
-    "format:root": "prettier --write './*.{ts,js,json,md}'"
+    "format": "prettier --write '**/*.{ts,js,json,md,yaml}' && echo Prettier Format successfully completed!"
   },
   "author": "ReavDev",
   "license": "ISC",
