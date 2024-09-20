@@ -147,23 +147,34 @@ const config = {
     /**
      * JWT access token expiration time in minutes.
      */
-    accessExpirationMinutes: parseInt(process.env["JWT_ACCESS_EXPIRATION_MINUTES"] as string, 10),
+    accessExpirationMinutes: parseInt(
+      process.env["JWT_ACCESS_EXPIRATION_MINUTES"] as string,
+      10,
+    ),
 
     /**
      * JWT refresh token expiration time in days.
      */
-    refreshExpirationDays: parseInt(process.env["JWT_REFRESH_EXPIRATION_DAYS"] as string, 10),
-
+    refreshExpirationDays: parseInt(
+      process.env["JWT_REFRESH_EXPIRATION_DAYS"] as string,
+      10,
+    ),
 
     /**
      * JWT reset password token expiration time in minutes.
      */
-    resetPasswordExpirationMinutes: parseInt(process.env["JWT_RESET_PASSWORD_EXPIRATION_MINUTES"] as string, 10),
+    resetPasswordExpirationMinutes: parseInt(
+      process.env["JWT_RESET_PASSWORD_EXPIRATION_MINUTES"] as string,
+      10,
+    ),
 
     /**
      * JWT email verification token expiration time in minutes.
      */
-    verifyEmailExpirationMinutes: parseInt(process.env["JWT_VERIFY_EMAIL_EXPIRATION_MINUTES"] as string, 10),
+    verifyEmailExpirationMinutes: parseInt(
+      process.env["JWT_VERIFY_EMAIL_EXPIRATION_MINUTES"] as string,
+      10,
+    ),
   },
 
   /**

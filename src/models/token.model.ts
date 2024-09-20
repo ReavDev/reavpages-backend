@@ -13,9 +13,13 @@ const tokenSchema: Schema<IToken> = new Schema(
       required: true,
       index: true,
     },
-    user: {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required: true,
+    },
+    userEmail: {
+      type: String,
       required: true,
     },
     type: {

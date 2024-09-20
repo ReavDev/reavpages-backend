@@ -68,6 +68,22 @@ const AuthController = {
   },
 
   /**
+   * Verify email
+   * @param req - Express request object
+   * @param res - Express response object
+   * @param next - Express next function
+   */
+  verifyEmail: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { token } = req.body;
+      const result = await AuthService.verifyEmail(token);
+      res.status(httpStatus.OK).json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
    * Enable 2FA
    * @param req - Express request object
    * @param res - Express response object

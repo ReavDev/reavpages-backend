@@ -13,10 +13,16 @@ export interface IToken extends Document {
   token: string;
 
   /**
-   * The user associated with this token.
+   * The user ID associated with this token.
    * @type {mongoose.Types.ObjectId}
    */
-  user: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
+
+  /**
+   * The user email associated with this token.
+   * @type {string}
+   */
+  userEmail: string;
 
   /**
    * The type of token (e.g., access, refresh, reset password, verify email).
@@ -38,8 +44,6 @@ export interface IToken extends Document {
 }
 
 /**
- * Interface representing a Token model in MongoDB.
- * @interface ITokenModel
- * @extends Model<IToken>
+ * Type representing a Token model in MongoDB.
  */
-export interface ITokenModel extends Model<IToken> {}
+export type ITokenModel = Model<IToken>;

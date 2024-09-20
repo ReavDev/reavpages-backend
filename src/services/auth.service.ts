@@ -1,13 +1,9 @@
 import { IUser } from "../types/user.types";
-import {
-  generateAuthTokens,
-  generateResetPasswordToken,
-  generateVerifyEmailToken,
-} from "../services/token.service";
+import TokenService from "../services/token.service";
 import UserService from "../services/user.service";
 import ApiError from "../utils/apiErrorHandler.utils";
 import httpStatus from "http-status";
-import EmailService from "..//services/email.service";
+import EmailService from "../services/email.service";
 
 /**
  * Auth service that provides various authentication-related functionalities.
@@ -24,7 +20,10 @@ const AuthService = {
     const user = await UserService.createUser(userData);
 
     // Generate JWT tokens
-    const tokens = await generateAuthTokens(user);
+    const tokens = await TokenService.generateAuthTokens(user);
+
+    // Send welcome email
+    await EmailService.sendWelcomeEmail(user.email, user.firstName);
 
     // Send verification email
     await AuthService.sendEmailVerification(user);
@@ -49,7 +48,7 @@ const AuthService = {
     }
 
     // Generate JWT tokens
-    const tokens = await generateAuthTokens(user);
+    const tokens = await TokenService.generateAuthTokens(user);
 
     return { user, tokens };
   },
@@ -65,7 +64,8 @@ const AuthService = {
     await UserService.getUserByEmail(email);
 
     // Generate and store reset password token
-    const resetPasswordToken = await generateResetPasswordToken(email);
+    const resetPasswordToken =
+      await TokenService.generateResetPasswordToken(email);
 
     // Send password reset email
     await EmailService.sendPasswordResetEmail(email, resetPasswordToken);
@@ -80,12 +80,51 @@ const AuthService = {
    */
   sendEmailVerification: async (user: IUser) => {
     // Generate email verification token
-    const verifyEmailToken = await generateVerifyEmailToken(user);
+    const emailVerificationToken =
+      await TokenService.generateEmailVerificationToken(user);
 
     // Send verification email
-    await EmailService.sendEmailVerification(user.email, verifyEmailToken);
+    await EmailService.sendEmailVerification(
+      user.email,
+      emailVerificationToken,
+    );
 
     return { message: "Verification email sent successfully" };
+  },
+
+  /**
+   * Verify user's email
+   * @param token - Email verification token
+   * @returns Confirmation message
+   * @throws ApiError if token is invalid or expired
+   */
+  verifyEmail: async (token: string) => {
+    try {
+      // Verify the token
+      const payload = await TokenService.verifyToken(token, "verifyEmail");
+
+      // Find the user by email
+      const user = await UserService.getUserByEmail(payload.userEmail);
+
+      if (!user) {
+        throw ApiError(httpStatus.NOT_FOUND, "User not found");
+      }
+
+      if (user.isEmailVerified) {
+        throw ApiError(httpStatus.BAD_REQUEST, "Email already verified");
+      }
+
+      // Update the isEmailVerified field
+      await UserService.updateUser(user.id, { isEmailVerified: true });
+
+      // Cleanup: delete the token after successful verification
+      await TokenService.deleteToken(token);
+
+      return { message: "Email verified successfully" };
+    } catch (error) {
+      console.log(error);
+      throw ApiError(httpStatus.UNAUTHORIZED, "Email verification failed");
+    }
   },
 };
 

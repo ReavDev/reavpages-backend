@@ -3,6 +3,7 @@ import { initializeDatabase } from "./config/database.config";
 import config from "./config/config";
 import EmailService from "./services/email.service";
 import authRoutes from "./routes/auth.routes";
+import errorHandler from "./middleware/errorHandler";
 
 const app = express();
 app.use(express.json());
@@ -19,6 +20,13 @@ app.get("/", (req: Request, res: Response) => {
 
 // Register auth routes
 app.use("/api/auth", authRoutes);
+
+/**
+ * Global error-handling middleware.
+ * Handles errors that occur within the controllers and middleware during the request-response cycle.
+ * Should be placed after all route definitions.
+ */
+app.use(errorHandler);
 
 /**
  * Initialize the database, verify email service connection, and start the server.

@@ -98,9 +98,8 @@ userSchema.methods.isPasswordMatch = async function (
  * @param next - The callback function to pass control to the next middleware.
  */
 userSchema.pre<IUser>("save", async function (next) {
-  const user = this;
-  if (user.isModified("password")) {
-    user.password = await bcrypt.hash(user.password, 8);
+  if (this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 8);
   }
   next();
 });
