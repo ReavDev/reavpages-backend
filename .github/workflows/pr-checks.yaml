@@ -6,7 +6,7 @@ on:
       - dev
 
 jobs:
-  lint-build-and-test:
+  lint-and-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
