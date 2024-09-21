@@ -2,6 +2,7 @@ import mongoose, { Schema } from "mongoose";
 import validator from "validator";
 import bcrypt from "bcryptjs";
 import { IUser, IUserModel } from "../types/user.types";
+import toJSON from "./plugins/toJSON.plugin";
 
 /**
  * User schema definition.
@@ -12,12 +13,10 @@ const userSchema: Schema<IUser> = new Schema(
   {
     firstName: {
       type: String,
-      required: true,
       trim: true,
     },
     lastName: {
       type: String,
-      required: true,
       trim: true,
     },
     email: {
@@ -44,6 +43,7 @@ const userSchema: Schema<IUser> = new Schema(
           );
         }
       },
+      private: true,
     },
     isEmailVerified: {
       type: Boolean,
@@ -63,6 +63,9 @@ const userSchema: Schema<IUser> = new Schema(
     timestamps: true,
   },
 );
+
+// Apply the toJSON plugin to the user schema
+userSchema.plugin(toJSON);
 
 /**
  * Checks if the provided email is already taken by another user.

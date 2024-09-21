@@ -18,7 +18,7 @@ const UserService = {
     if (!user) {
       throw ApiError(httpStatus.NOT_FOUND, "No user found with this email");
     }
-    return user;
+    return user.toJSON();
   },
 
   /**
@@ -32,7 +32,7 @@ const UserService = {
     if (!user) {
       throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
     }
-    return user;
+    return user.toJSON();
   },
 
   /**
@@ -49,7 +49,7 @@ const UserService = {
 
     const user = new User(userData);
     await user.save();
-    return user;
+    return user.toJSON();
   },
 
   /**
@@ -69,7 +69,7 @@ const UserService = {
     if (!user) {
       throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
     }
-    return user;
+    return user.toJSON();
   },
 
   /**
@@ -83,7 +83,7 @@ const UserService = {
     if (!user) {
       throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
     }
-    return user;
+    return user.toJSON();
   },
 };
 

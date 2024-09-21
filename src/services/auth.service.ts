@@ -23,7 +23,7 @@ const AuthService = {
     const tokens = await TokenService.generateAuthTokens(user);
 
     // Send welcome email
-    await EmailService.sendWelcomeEmail(user.email, user.firstName);
+    await EmailService.sendWelcomeEmail(user.email);
 
     // Send verification email
     await AuthService.sendEmailVerification(user);

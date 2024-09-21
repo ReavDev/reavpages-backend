@@ -54,13 +54,12 @@ const EmailService = {
 
   /**
    * Send a welcome email to a new user.
-   * @param to - Recipient email address.
-   * @param firstName - The first name of the new user.
+   * @param email - Recipient email address.
    * @returns A promise that resolves when the email is sent.
    */
-  sendWelcomeEmail: async (to: string, firstName: string): Promise<void> => {
+  sendWelcomeEmail: async (email: string): Promise<void> => {
     const subject = "Welcome to Reavpages";
-    const text = `Hello ${firstName},
+    const text = `Hello ${email},
 
 Welcome to Reavpages! We're excited to have you on board.
 
@@ -74,7 +73,7 @@ If you have any questions or need assistance, don't hesitate to reach out to our
 Best regards,
 Reavpages`;
 
-    await EmailService.sendEmail(to, subject, text);
+    await EmailService.sendEmail(email, subject, text);
   },
 
   /**
