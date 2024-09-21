@@ -1,5 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import { IToken, ITokenModel } from "../types/token.types";
+import toJSON from "./plugins/toJSON.plugin";
+import paginate from "./plugins/paginate.plugin";
 
 /**
  * Token schema definition.
@@ -40,6 +42,10 @@ const tokenSchema: Schema<IToken> = new Schema(
     timestamps: true,
   },
 );
+
+// Apply the plugins to the user schema
+tokenSchema.plugin(toJSON);
+tokenSchema.plugin(paginate);
 
 /**
  * The Token model based on the Token schema.

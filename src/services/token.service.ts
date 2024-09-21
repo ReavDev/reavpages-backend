@@ -7,6 +7,7 @@ import { IToken } from "../types/token.types";
 import Token from "../models/token.model";
 import ApiError from "../utils/apiErrorHandler.utils";
 import { IUser } from "../types/user.types";
+import { FilterQuery } from "mongoose";
 
 /**
  * TokenService provides methods to manage authentication tokens.
@@ -62,6 +63,21 @@ const TokenService = {
       blacklisted,
     });
     return tokenDoc;
+  },
+
+  /**
+   * Query tokens based on filter query and pagination options.
+   *
+   * @param filter - MongoDB filter query for retrieving tokens
+   * @param options - Pagination options (sort, page, limit, etc.)
+   * @returns Paginated result of tokens
+   */
+  queryTokens: async (
+    filter: FilterQuery<IToken>,
+    options: PaginateOptions,
+  ) => {
+    const tokens = await Token.paginate(filter, options);
+    return tokens;
   },
 
   /**

@@ -1,4 +1,4 @@
-import mongoose, { Document, Model } from "mongoose";
+import mongoose, { Document, Model, FilterQuery } from "mongoose";
 
 /**
  * Interface representing a Token document in MongoDB.
@@ -44,6 +44,18 @@ export interface IToken extends Document {
 }
 
 /**
- * Type representing a Token model in MongoDB.
+ * Interface representing static methods available on the Token model.
  */
-export type ITokenModel = Model<IToken>;
+export interface ITokenModel extends Model<IToken> {
+  /**
+   * Performs a paginated query on the model.
+   *
+   * @param filter - MongoDB filter query
+   * @param options - Pagination options
+   * @returns A promise that resolves to the paginated query result
+   */
+  paginate(
+    filter: FilterQuery<IToken>,
+    options: PaginateOptions,
+  ): Promise<QueryResult<IToken>>;
+}

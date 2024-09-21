@@ -2,11 +2,24 @@ import User from "../models/user.model";
 import { IUser } from "../types/user.types";
 import ApiError from "../utils/apiErrorHandler.utils";
 import httpStatus from "http-status";
+import { FilterQuery } from "mongoose";
 
 /**
  * UserService provides methods to interact with user data.
  */
 const UserService = {
+  /**
+   * Query users based on filter query and pagination options.
+   *
+   * @param filter - MongoDB filter query for retrieving tokens
+   * @param options - Pagination options (sort, page, limit, etc.)
+   * @returns Paginated result of users
+   */
+  queryUsers: async (filter: FilterQuery<IUser>, options: PaginateOptions) => {
+    const users = await User.paginate(filter, options);
+    return users;
+  },
+
   /**
    * Get a user by email
    * @param email - User's email address
@@ -18,7 +31,7 @@ const UserService = {
     if (!user) {
       throw ApiError(httpStatus.NOT_FOUND, "No user found with this email");
     }
-    return user.toJSON();
+    return user;
   },
 
   /**
@@ -32,7 +45,7 @@ const UserService = {
     if (!user) {
       throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
     }
-    return user.toJSON();
+    return user;
   },
 
   /**
@@ -49,7 +62,7 @@ const UserService = {
 
     const user = new User(userData);
     await user.save();
-    return user.toJSON();
+    return user;
   },
 
   /**
@@ -69,7 +82,7 @@ const UserService = {
     if (!user) {
       throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
     }
-    return user.toJSON();
+    return user;
   },
 
   /**
@@ -83,7 +96,7 @@ const UserService = {
     if (!user) {
       throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
     }
-    return user.toJSON();
+    return user;
   },
 };
 

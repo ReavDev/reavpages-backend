@@ -3,6 +3,7 @@ import validator from "validator";
 import bcrypt from "bcryptjs";
 import { IUser, IUserModel } from "../types/user.types";
 import toJSON from "./plugins/toJSON.plugin";
+import paginate from "./plugins/paginate.plugin";
 
 /**
  * User schema definition.
@@ -64,8 +65,9 @@ const userSchema: Schema<IUser> = new Schema(
   },
 );
 
-// Apply the toJSON plugin to the user schema
+// Apply the plugins to the user schema
 userSchema.plugin(toJSON);
+userSchema.plugin(paginate);
 
 /**
  * Checks if the provided email is already taken by another user.

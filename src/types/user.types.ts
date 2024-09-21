@@ -1,4 +1,4 @@
-import mongoose, { Document, Model } from "mongoose";
+import mongoose, { Document, Model, FilterQuery } from "mongoose";
 
 /**
  * Interface representing a User document in MongoDB.
@@ -85,4 +85,16 @@ export interface IUserModel extends Model<IUser> {
     email: string,
     excludeUserId?: mongoose.Types.ObjectId,
   ): Promise<boolean>;
+
+  /**
+   * Performs a paginated query on the model.
+   *
+   * @param filter - MongoDB filter query
+   * @param options - Pagination options
+   * @returns A promise that resolves to the paginated query result
+   */
+  paginate(
+    filter: FilterQuery<IUser>,
+    options: PaginateOptions,
+  ): Promise<QueryResult<IUser>>;
 }
