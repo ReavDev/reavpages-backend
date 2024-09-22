@@ -5,6 +5,7 @@ import ApiError from "../utils/apiErrorHandler.util";
 import httpStatus from "http-status";
 import EmailService from "../services/email.service";
 import config from "../config/config";
+import User from "../models/user.model";
 
 /**
  * Auth service that provides various authentication-related functionalities.
@@ -25,7 +26,7 @@ const AuthService = {
       role = "superAdmin";
 
       // Check if a super admin already exists
-      const user = await UserService.getUserByRole(role);
+      const user = await User.findOne({ role: "superAdmin" });
       if (user) {
         throw ApiError(httpStatus.BAD_REQUEST, "A super admin already exists");
       }

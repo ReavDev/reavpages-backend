@@ -49,20 +49,6 @@ const UserService = {
   },
 
   /**
-   * Get a user by user role
-   * @param role - The role of the user
-   * @returns The user document if found
-   * @throws ApiError if no user is found with the provided ID
-   */
-  getUserByRole: async (role: string): Promise<IUser> => {
-    const user = await User.findOne({ role });
-    if (!user) {
-      throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
-    }
-    return user;
-  },
-
-  /**
    * Create a new user
    * @param userData - User data for creation
    * @returns The created user document
