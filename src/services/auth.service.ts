@@ -145,7 +145,7 @@ const AuthService = {
       await TokenService.deleteToken(token);
 
       return { message: "Email verified successfully" };
-    } catch (error) {
+    } catch {
       throw ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
         "Email verification failed",
