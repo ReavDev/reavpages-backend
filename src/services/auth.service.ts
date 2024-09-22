@@ -1,7 +1,7 @@
 import { IUser } from "../types/user.types";
 import TokenService from "../services/token.service";
 import UserService from "../services/user.service";
-import ApiError from "../utils/apiErrorHandler.utils";
+import ApiError from "../utils/apiErrorHandler.util";
 import httpStatus from "http-status";
 import EmailService from "../services/email.service";
 import config from "../config/config";
@@ -114,6 +114,14 @@ const AuthService = {
    * @throws ApiError if token is invalid or expired
    */
   verifyEmail: async (token: string) => {
+    // Check if token is provided
+    if (!token) {
+      throw ApiError(
+        httpStatus.UNAUTHORIZED,
+        "Email verification token not provided",
+      );
+    }
+
     try {
       // Verify the token
       const payload = await TokenService.verifyToken(token, "verifyEmail");
@@ -137,8 +145,10 @@ const AuthService = {
 
       return { message: "Email verified successfully" };
     } catch (error) {
-      console.log(error);
-      throw ApiError(httpStatus.UNAUTHORIZED, "Email verification failed");
+      throw ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Email verification failed",
+      );
     }
   },
 };

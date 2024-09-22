@@ -5,7 +5,7 @@ import config from "../config/config";
 import userService from "./user.service";
 import { IToken } from "../types/token.types";
 import Token from "../models/token.model";
-import ApiError from "../utils/apiErrorHandler.utils";
+import ApiError from "../utils/apiErrorHandler.util";
 import { IUser } from "../types/user.types";
 import { FilterQuery } from "mongoose";
 

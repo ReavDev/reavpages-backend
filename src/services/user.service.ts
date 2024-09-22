@@ -1,6 +1,6 @@
 import User from "../models/user.model";
 import { IUser } from "../types/user.types";
-import ApiError from "../utils/apiErrorHandler.utils";
+import ApiError from "../utils/apiErrorHandler.util";
 import httpStatus from "http-status";
 import { FilterQuery } from "mongoose";
 

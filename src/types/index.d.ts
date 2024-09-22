@@ -1,5 +1,3 @@
-// types/global.d.ts
-
 import { Document } from "mongoose";
 
 declare global {

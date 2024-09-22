@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { initializeDatabase } from "./config/database.config";
 import config from "./config/config";
 import EmailService from "./services/email.service";
-import authRoutes from "./routes/auth.routes";
+import apiRoutes from "./routes/index";
 import errorHandler from "./middleware/errorHandler";
 
 const app = express();
@@ -18,8 +18,8 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Welcome to ReavPages Backend server");
 });
 
-// Register auth routes
-app.use("/api/auth", authRoutes);
+// Register api routesr
+app.use("/api", apiRoutes);
 
 /**
  * Global error-handling middleware.
