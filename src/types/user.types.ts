@@ -52,7 +52,7 @@ export interface IUser extends Document {
    * Possible values are "email" or "phone".
    * @example "email"
    */
-  twoFAType: string;
+  twoFAType: "email" | "phone";
 
   /**
    * The secret key used for two-factor authentication.
@@ -60,6 +60,13 @@ export interface IUser extends Document {
    * @example "JBSWY3DPEHPK3PXP"
    */
   twoFASecret: string;
+
+  /**
+   * The role of the user.
+   * Possible values are "user" or "admin".
+   * @example "user"
+   */
+  role: "user" | "admin" | "superAdmin";
 
   /**
    * Checks if the provided password matches the user's hashed password.

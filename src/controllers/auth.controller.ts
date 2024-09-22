@@ -15,14 +15,17 @@ const AuthController = {
    */
   register: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { email, password } = req.body;
-      const { user, tokens } = await AuthService.register({
-        email,
-        password,
-      });
+      const { email, password, adminSecret } = req.body;
+      const { user, tokens } = await AuthService.register(
+        { email, password },
+        adminSecret,
+      );
+
       res.status(httpStatus.CREATED).json({
         message:
-          "User created successfully, please check your mail for verification!",
+          user.role === "superAdmin"
+            ? "Super admin created successfully, please check your mail for verification!"
+            : "User created successfully, please check your mail for verification!",
         data: {
           user,
           tokens,

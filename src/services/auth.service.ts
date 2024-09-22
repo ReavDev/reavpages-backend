@@ -4,6 +4,7 @@ import UserService from "../services/user.service";
 import ApiError from "../utils/apiErrorHandler.utils";
 import httpStatus from "http-status";
 import EmailService from "../services/email.service";
+import config from "../config/config";
 
 /**
  * Auth service that provides various authentication-related functionalities.
@@ -12,12 +13,26 @@ const AuthService = {
   /**
    * Register a new user
    * @param userData - User data for creation
+   * @param adminSecret - (optional) Admin secret for assigning the super admin role
    * @returns The created user and JWT tokens
-   * @throws ApiError if email is already in use
+   * @throws ApiError if email is already in use or invalid admin secret
    */
-  register: async (userData: Partial<IUser>) => {
+  register: async (userData: Partial<IUser>, adminSecret?: string) => {
+    let role: "user" | "admin" | "superAdmin" | undefined = undefined;
+
+    // If the adminSecret is provided and correct, assign the super-admin role
+    if (adminSecret && adminSecret === config.adminSecret) {
+      role = "superAdmin";
+
+      // Check if a super admin already exists
+      const user = await UserService.getUserByRole(role);
+      if (user) {
+        throw ApiError(httpStatus.BAD_REQUEST, "A super admin already exists");
+      }
+    }
+
     // Create a new user
-    const user = await UserService.createUser(userData);
+    const user = await UserService.createUser({ ...userData, role });
 
     // Generate JWT tokens
     const tokens = await TokenService.generateAuthTokens(user);

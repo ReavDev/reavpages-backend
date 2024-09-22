@@ -25,6 +25,13 @@ const envVarsSchema = Joi.object({
     .description("The URL used to connect to the MongoDB database"),
 
   /**
+   * Secret key used for administrative purposes.
+   */
+  ADMIN_SECRET: Joi.string()
+    .required()
+    .description("Secret key for administrative functions"),
+
+  /**
    * JWT secret key for signing tokens.
    */
   JWT_SECRET: Joi.string()
@@ -134,6 +141,11 @@ const config = {
      */
     url: process.env["MONGODB_URL"] as string,
   },
+
+  /**
+   * Administrative secret key.
+   */
+  adminSecret: process.env["ADMIN_SECRET"] as string,
 
   /**
    * JWT settings.
