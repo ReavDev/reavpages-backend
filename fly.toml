@@ -3,7 +3,7 @@
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'reavpages-backend'
+app = 'api-dev-reavpages'
 primary_region = 'ams'
 
 [build]
@@ -19,4 +19,4 @@ processes = ['app']
 [[vm]]
 memory = '2gb'
 cpu_kind = 'shared'
-cpus = 4
+cpus = 1

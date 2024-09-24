@@ -1,13 +1,13 @@
 # See https://fly.io/docs/app-guides/continuous-deployment-with-github-actions/
 
-name: App Deploy
+name: Dev Deploy
 on:
   push:
     branches:
       - dev
 jobs:
   deploy:
-    name: Deploy app
+    name: Dev deploy
     runs-on: ubuntu-latest
     concurrency: deploy-group
     steps:
