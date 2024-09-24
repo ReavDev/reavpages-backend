@@ -1,15 +1,15 @@
-# fly.toml app configuration file generated for reavpages-backend on 2024-09-24T03:10:03+01:00
+# fly.dev.toml app configuration file generated for api-dev-reavpages on 2024-09-24T21:16:46+01:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'reavpages-backend'
+app = 'api-dev-reavpages'
 primary_region = 'ams'
 
 [build]
 
 [http_service]
-  internal_port = 3000
+  internal_port = 7000
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
@@ -19,4 +19,4 @@ primary_region = 'ams'
 [[vm]]
   memory = '2gb'
   cpu_kind = 'shared'
-  cpus = 4
+  cpus = 1
