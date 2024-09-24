@@ -32,43 +32,32 @@ const envVarsSchema = Joi.object({
     .description("Secret key for administrative functions"),
 
   /**
-   * JWT secret key for signing tokens.
+   * Token secret key for signing tokens.
    */
-  JWT_SECRET: Joi.string()
+  TOKEN_SECRET: Joi.string()
     .required()
-    .description("The secret key used to sign JWT tokens"),
+    .description("The secret key used to sign tokens"),
 
   /**
-   * JWT access token expiration time in minutes.
+   * Token access expiration time in minutes.
    */
-  JWT_ACCESS_EXPIRATION_MINUTES: Joi.number()
+  TOKEN_ACCESS_EXPIRATION_MINUTES: Joi.number()
     .default(30)
     .description("The number of minutes after which access tokens expire"),
 
   /**
-   * JWT refresh token expiration time in days.
+   * Token refresh expiration time in days.
    */
-  JWT_REFRESH_EXPIRATION_DAYS: Joi.number()
+  TOKEN_REFRESH_EXPIRATION_DAYS: Joi.number()
     .default(30)
     .description("The number of days after which refresh tokens expire"),
 
   /**
-   * JWT reset password token expiration time in minutes.
+   * Token OTP expiration time in minutes.
    */
-  JWT_RESET_PASSWORD_EXPIRATION_MINUTES: Joi.number()
+  TOKEN_OTP_EXPIRATION_MINUTES: Joi.number()
     .default(10)
-    .description(
-      "The number of minutes after which reset password tokens expire",
-    ),
-
-  /**
-   * JWT email verification token expiration time in minutes.
-   */
-  JWT_VERIFY_EMAIL_EXPIRATION_MINUTES: Joi.number()
-    .default(10)
-    .description(
-      "The number of minutes after which email verification tokens expire",
-    ),
+    .description("The number of minutes after which OTP expires"),
 
   /**
    * SMTP server host for sending emails.
@@ -148,43 +137,35 @@ const config = {
   adminSecret: process.env["ADMIN_SECRET"] as string,
 
   /**
-   * JWT settings.
+   * Token settings.
    */
-  jwt: {
+  token: {
     /**
-     * JWT secret key for signing tokens.
+     * Token secret key for signing tokens.
      */
-    secret: process.env["JWT_SECRET"] as string,
+    secret: process.env["TOKEN_SECRET"] as string,
 
     /**
-     * JWT access token expiration time in minutes.
+     * Token access expiration time in minutes.
      */
     accessExpirationMinutes: parseInt(
-      process.env["JWT_ACCESS_EXPIRATION_MINUTES"] as string,
+      process.env["TOKEN_ACCESS_EXPIRATION_MINUTES"] as string,
       10,
     ),
 
     /**
-     * JWT refresh token expiration time in days.
+     * Token refresh expiration time in days.
      */
     refreshExpirationDays: parseInt(
-      process.env["JWT_REFRESH_EXPIRATION_DAYS"] as string,
+      process.env["TOKEN_REFRESH_EXPIRATION_DAYS"] as string,
       10,
     ),
 
     /**
-     * JWT reset password token expiration time in minutes.
+     * Token OTP expiration time in minutes.
      */
-    resetPasswordExpirationMinutes: parseInt(
-      process.env["JWT_RESET_PASSWORD_EXPIRATION_MINUTES"] as string,
-      10,
-    ),
-
-    /**
-     * JWT email verification token expiration time in minutes.
-     */
-    verifyEmailExpirationMinutes: parseInt(
-      process.env["JWT_VERIFY_EMAIL_EXPIRATION_MINUTES"] as string,
+    otpExpirationMinutes: parseInt(
+      process.env["TOKEN_OTP_EXPIRATION_MINUTES"] as string,
       10,
     ),
   },

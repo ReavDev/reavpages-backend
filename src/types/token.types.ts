@@ -31,6 +31,12 @@ export interface IToken extends Document {
   type: string;
 
   /**
+   * The type of token to be stored (JWT or OTP).
+   * @type {string}
+   */
+  tokenType: string;
+
+  /**
    * The expiry date of the token.
    * @type {Date}
    */

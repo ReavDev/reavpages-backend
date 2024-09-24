@@ -29,6 +29,11 @@ const tokenSchema: Schema<IToken> = new Schema(
       enum: ["access", "refresh", "resetPassword", "verifyEmail"],
       required: true,
     },
+    tokenType: {
+      type: String,
+      enum: ["jwt", "otp"],
+      required: true,
+    },
     expires: {
       type: Date,
       required: true,

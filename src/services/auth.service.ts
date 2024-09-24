@@ -36,13 +36,13 @@ const AuthService = {
     const user = await UserService.createUser({ ...userData, role });
 
     // Generate JWT tokens
-    const tokens = await TokenService.generateAuthTokens(user);
+    const tokens = await TokenService.generateAuthTokens(user.email);
 
     // Send welcome email
     await EmailService.sendWelcomeEmail(user.email);
 
     // Send verification email
-    await AuthService.sendEmailVerification(user);
+    await AuthService.sendEmailVerification(user.email);
 
     return { user, tokens };
   },
@@ -64,7 +64,7 @@ const AuthService = {
     }
 
     // Generate JWT tokens
-    const tokens = await TokenService.generateAuthTokens(user);
+    const tokens = await TokenService.generateAuthTokens(email);
 
     return { user, tokens };
   },
@@ -80,8 +80,10 @@ const AuthService = {
     await UserService.getUserByEmail(email);
 
     // Generate and store reset password token
-    const resetPasswordToken =
-      await TokenService.generateResetPasswordToken(email);
+    const resetPasswordToken = await TokenService.generateOTP(
+      email,
+      "resetPassword",
+    );
 
     // Send password reset email
     await EmailService.sendPasswordResetEmail(email, resetPasswordToken);
@@ -94,16 +96,15 @@ const AuthService = {
    * @param user - User object
    * @returns Confirmation message
    */
-  sendEmailVerification: async (user: IUser) => {
+  sendEmailVerification: async (email: string) => {
     // Generate email verification token
-    const emailVerificationToken =
-      await TokenService.generateEmailVerificationToken(user);
+    const emailVerificationToken = await TokenService.generateOTP(
+      email,
+      "verifyEmail",
+    );
 
     // Send verification email
-    await EmailService.sendEmailVerification(
-      user.email,
-      emailVerificationToken,
-    );
+    await EmailService.sendEmailVerification(email, emailVerificationToken);
 
     return { message: "Verification email sent successfully" };
   },
@@ -125,7 +126,11 @@ const AuthService = {
 
     try {
       // Verify the token
-      const payload = await TokenService.verifyToken(token, "verifyEmail");
+      const payload = await TokenService.verifyToken(
+        token,
+        "verifyEmail",
+        "otp",
+      );
 
       // Find the user by email
       const user = await UserService.getUserByEmail(payload.userEmail);

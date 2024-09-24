@@ -54,12 +54,12 @@ const EmailService = {
 
   /**
    * Send a welcome email to a new user.
-   * @param email - Recipient email address.
+   * @param to - Recipient email address.
    * @returns A promise that resolves when the email is sent.
    */
-  sendWelcomeEmail: async (email: string): Promise<void> => {
+  sendWelcomeEmail: async (to: string): Promise<void> => {
     const subject = "Welcome to Reavpages";
-    const text = `Hello ${email},
+    const text = `Hello ${to},
 
 Welcome to Reavpages! We're excited to have you on board.
 
@@ -73,7 +73,7 @@ If you have any questions or need assistance, don't hesitate to reach out to our
 Best regards,
 Reavpages`;
 
-    await EmailService.sendEmail(email, subject, text);
+    await EmailService.sendEmail(to, subject, text);
   },
 
   /**
@@ -84,9 +84,8 @@ Reavpages`;
    */
   sendPasswordResetEmail: async (to: string, token: string): Promise<void> => {
     const subject = "Reset Password";
-    const resetPasswordUrl = `http://link-to-app/reset-password?token=${token}`;
-    const text = `Dear user,
-To reset your password, click on this link: ${resetPasswordUrl}
+    const text = `Dear ${to},
+To reset your password, kindly use the OTP: ${token}
 If you did not request any password resets, please ignore this email.`;
     await EmailService.sendEmail(to, subject, text);
   },
@@ -99,9 +98,8 @@ If you did not request any password resets, please ignore this email.`;
    */
   sendEmailVerification: async (to: string, token: string): Promise<void> => {
     const subject = "Confirm your email address";
-    const verificationEmailUrl = `http://localhost:7000/verify-email?token=${token}`;
-    const text = `Dear user,
-To verify your email, click on this link: ${verificationEmailUrl}
+    const text = `Dear ${to},
+To verify your email, kindly use the OTP: ${token}
 If you did not create an account, please ignore this email.`;
     await EmailService.sendEmail(to, subject, text);
   },

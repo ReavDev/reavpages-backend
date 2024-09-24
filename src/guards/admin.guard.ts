@@ -37,7 +37,7 @@ export const adminGuard = async (
     }
 
     // Verify the token and extract the payload
-    const payload = await TokenService.verifyToken(token, "access");
+    const payload = await TokenService.verifyToken(token, "access", "jwt");
 
     // If the payload doesn't contain userEmail, throw a User not found error
     if (!payload.userEmail) {
