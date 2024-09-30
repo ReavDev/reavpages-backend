@@ -6,6 +6,7 @@ import httpStatus from "http-status";
 import EmailService from "../services/email.service";
 import config from "../config/config";
 import User from "../models/user.model";
+import validator from "validator";
 
 /**
  * Auth service that provides various authentication-related functionalities.
@@ -20,6 +21,37 @@ const AuthService = {
    */
   register: async (userData: Partial<IUser>, adminSecret?: string) => {
     let role: "user" | "admin" | "superAdmin" | undefined = undefined;
+
+    if (!userData || !userData.email) {
+      throw ApiError(httpStatus.BAD_REQUEST, "User Data not provided");
+    }
+
+    // Validate email
+    if (!validator.isEmail(userData.email || "")) {
+      throw ApiError(httpStatus.BAD_REQUEST, "Invalid email format");
+    }
+
+    // Validate password
+    if (!userData.password || userData.password.length < 6) {
+      throw ApiError(
+        httpStatus.BAD_REQUEST,
+        "Password must be at least 8 characters long",
+      );
+    }
+    if (
+      !userData.password.match(/\d/) ||
+      !userData.password.match(/[a-zA-Z]/)
+    ) {
+      throw ApiError(
+        httpStatus.BAD_REQUEST,
+        "Password must contain at least one letter and one number",
+      );
+    }
+
+    // Check if email is already taken
+    if (await User.isEmailTaken(userData.email)) {
+      throw ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+    }
 
     // If the adminSecret is provided and correct, assign the super-admin role
     if (adminSecret && adminSecret === config.adminSecret) {
@@ -58,9 +90,19 @@ const AuthService = {
     // Find user by email
     const user = await UserService.getUserByEmail(email);
 
+    // Check if user exists
+    if (!user) {
+      throw ApiError(httpStatus.UNAUTHORIZED, "Incorrect email or password");
+    }
+
     // Check password
     if (!(await user.isPasswordMatch(password))) {
       throw ApiError(httpStatus.UNAUTHORIZED, "Incorrect email or password");
+    }
+
+    // Check email verification
+    if (!user.isEmailVerified) {
+      throw ApiError(httpStatus.UNAUTHORIZED, "Email not verified");
     }
 
     // Generate JWT tokens
