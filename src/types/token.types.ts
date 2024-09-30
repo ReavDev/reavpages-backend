@@ -19,13 +19,7 @@ export interface IToken extends Document {
   userId: mongoose.Types.ObjectId;
 
   /**
-   * The user email associated with this token.
-   * @type {string}
-   */
-  userEmail: string;
-
-  /**
-   * The type of token (e.g., access, refresh, reset password, verify email).
+   * The type of token (e.g., access, refresh, reset password, verify email, twoFa).
    * @type {string}
    */
   type: string;
@@ -33,8 +27,9 @@ export interface IToken extends Document {
   /**
    * The type of token to be stored (JWT or OTP).
    * @type {string}
+   * @example "jwt"
    */
-  tokenType: string;
+  tokenType: "jwt" | "otp";
 
   /**
    * The expiry date of the token.
@@ -47,6 +42,18 @@ export interface IToken extends Document {
    * @type {boolean}
    */
   blacklisted: boolean;
+
+  /**
+   * Number of OTP requests made by the user
+   * @type {number}
+   */
+  otpRequestCount: number;
+
+  /**
+   * Time period (in minutes) to wait before generating another OTP
+   * @type {number}
+   */
+  otpCooldownPeriod: number;
 }
 
 /**

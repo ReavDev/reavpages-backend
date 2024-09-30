@@ -60,6 +60,40 @@ const envVarsSchema = Joi.object({
     .description("The number of minutes after which OTP expires"),
 
   /**
+   * Maximum number of OTP requests allowed.
+   */
+  TOKEN_OTP_MAX_REQUESTS: Joi.number()
+    .default(5)
+    .description(
+      "The maximum number of OTP requests allowed within the time window",
+    ),
+
+  /**
+   * Time window for OTP requests in minutes.
+   */
+  TOKEN_OTP_REQUESTS_WINDOW: Joi.number()
+    .default(10)
+    .description("The time window in minutes for OTP requests"),
+
+  /**
+   * Cooldown time in minutes after hitting the maximum OTP requests.
+   */
+  TOKEN_OTP_COOLDOWN_TIME: Joi.number()
+    .default(1)
+    .description(
+      "The cooldown time in minutes after hitting the maximum OTP requests",
+    ),
+
+  /**
+   * Extended cooldown time in minutes for additional blocking.
+   */
+  TOKEN_OTP_EXTENDED_COOLDOWN_TIME: Joi.number()
+    .default(60)
+    .description(
+      "The extended cooldown time in minutes for additional blocking",
+    ),
+
+  /**
    * SMTP server host for sending emails.
    */
   SMTP_HOST: Joi.string().description(
@@ -93,6 +127,27 @@ const envVarsSchema = Joi.object({
   EMAIL_FROM: Joi.string().description(
     "The 'from' email address for outgoing emails",
   ),
+
+  /**
+   * Twilio SID for messaging service.
+   */
+  TWILIO_SID: Joi.string()
+    .required()
+    .description("Twilio Account SID for messaging"),
+
+  /**
+   * Twilio Auth Token for messaging service.
+   */
+  TWILIO_AUTH_TOKEN: Joi.string()
+    .required()
+    .description("Twilio authentication token for messaging"),
+
+  /**
+   * Phone number used as the 'from' number in messages.
+   */
+  MESSAGE_FROM: Joi.string()
+    .required()
+    .description("The 'from' phone number for messaging service"),
 }).unknown();
 
 /**
@@ -168,6 +223,38 @@ const config = {
       process.env["TOKEN_OTP_EXPIRATION_MINUTES"] as string,
       10,
     ),
+
+    /**
+     * Maximum number of OTP requests allowed.
+     */
+    otpMaxRequests: parseInt(
+      process.env["TOKEN_OTP_MAX_REQUESTS"] as string,
+      10,
+    ),
+
+    /**
+     * Time window for OTP requests in minutes.
+     */
+    otpRequestsWindow: parseInt(
+      process.env["TOKEN_OTP_REQUESTS_WINDOW"] as string,
+      10,
+    ),
+
+    /**
+     * Cooldown time in minutes after hitting the maximum OTP requests.
+     */
+    otpCooldownTime: parseInt(
+      process.env["TOKEN_OTP_COOLDOWN_TIME"] as string,
+      10,
+    ),
+
+    /**
+     * Extended cooldown time in minutes for additional blocking.
+     */
+    otpExtendedCooldownTime: parseInt(
+      process.env["TOKEN_OTP_EXTENDED_COOLDOWN_TIME"] as string,
+      10,
+    ),
   },
 
   /**
@@ -208,6 +295,24 @@ const config = {
      * Email address used as the 'from' address in emails.
      */
     from: process.env["EMAIL_FROM"] as string,
+  },
+
+  /**
+   * Messaging settings.
+   */
+  messaging: {
+    /**
+     * Twilio SID.
+     */
+    sid: process.env["TWILIO_SID"] as string,
+    /**
+     * Twilio auth token.
+     */
+    authToken: process.env["TWILIO_AUTH_TOKEN"] as string,
+    /**
+     * Phone number used as the 'from' number in messages
+     */
+    from: process.env["MESSAGE_FROM"] as string,
   },
 };
 

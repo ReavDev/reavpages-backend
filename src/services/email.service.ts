@@ -1,28 +1,27 @@
 import nodemailer from "nodemailer";
 import config from "../config/config";
+import ApiError from "../utils/apiErrorHandler.util";
+import httpStatus from "http-status";
+
+/**
+ * Create a transport object for sending emails.
+ * @returns The nodemailer transport object.
+ */
+const transport = nodemailer.createTransport({
+  ...config.email.smtp,
+  secure: config.email.smtp.port === 465,
+  logger: config.env === "development",
+  debug: config.env === "development",
+});
 
 /**
  * Email service for sending various types of emails.
  */
 const EmailService = {
   /**
-   * Create a transport object for sending emails.
-   * @returns The nodemailer transport object.
-   */
-  createTransport() {
-    return nodemailer.createTransport({
-      ...config.email.smtp,
-      secure: config.email.smtp.port === 465,
-      logger: config.env === "development",
-      debug: config.env === "development",
-    });
-  },
-
-  /**
    * Verify the connection to the email server.
    */
   verifyConnection: async () => {
-    const transport = EmailService.createTransport();
     if (config.env !== "test") {
       try {
         await transport.verify();
@@ -47,9 +46,14 @@ const EmailService = {
     subject: string,
     text: string,
   ): Promise<void> => {
-    const transport = EmailService.createTransport();
-    const msg = { from: config.email.from, to, subject, text };
-    await transport.sendMail(msg);
+    try {
+      await transport.sendMail({ from: config.email.from, to, subject, text });
+    } catch {
+      throw ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Failed to send email. Please try again later.",
+      );
+    }
   },
 
   /**
@@ -72,8 +76,14 @@ If you have any questions or need assistance, don't hesitate to reach out to our
 
 Best regards,
 Reavpages`;
-
-    await EmailService.sendEmail(to, subject, text);
+    try {
+      await EmailService.sendEmail(to, subject, text);
+    } catch {
+      throw ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Failed to send welcome email.",
+      );
+    }
   },
 
   /**
@@ -87,7 +97,14 @@ Reavpages`;
     const text = `Dear ${to},
 To reset your password, kindly use the OTP: ${token}
 If you did not request any password resets, please ignore this email.`;
-    await EmailService.sendEmail(to, subject, text);
+    try {
+      await EmailService.sendEmail(to, subject, text);
+    } catch {
+      throw ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Failed to send password reset email.",
+      );
+    }
   },
 
   /**
@@ -101,7 +118,14 @@ If you did not request any password resets, please ignore this email.`;
     const text = `Dear ${to},
 To verify your email, kindly use the OTP: ${token}
 If you did not create an account, please ignore this email.`;
-    await EmailService.sendEmail(to, subject, text);
+    try {
+      await EmailService.sendEmail(to, subject, text);
+    } catch {
+      throw ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Failed to send verification email.",
+      );
+    }
   },
 };
 

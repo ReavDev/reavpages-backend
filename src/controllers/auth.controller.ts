@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import httpStatus from "http-status";
 import AuthService from "../services/auth.service";
-import UserService from "../services/user.service";
+import ApiError from "../utils/apiErrorHandler.util";
 
 /**
  * AuthController providing various authentication-related functionalities.
@@ -11,9 +11,8 @@ const AuthController = {
    * Register a new user
    * @param req - Express request object
    * @param res - Express response object
-   * @param next - Express next function
    */
-  register: async (req: Request, res: Response, next: NextFunction) => {
+  register: async (req: Request, res: Response) => {
     try {
       const { email, password, adminSecret } = req.body;
       const { user, tokens } = await AuthService.register(
@@ -32,7 +31,10 @@ const AuthController = {
         },
       });
     } catch (error) {
-      next(error);
+      throw ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -40,15 +42,17 @@ const AuthController = {
    * Login a user
    * @param req - Express request object
    * @param res - Express response object
-   * @param next - Express next function
    */
-  login: async (req: Request, res: Response, next: NextFunction) => {
+  login: async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
       const { user, tokens } = await AuthService.login(email, password);
       res.status(httpStatus.OK).json({ user, tokens });
     } catch (error) {
-      next(error);
+      throw ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -56,15 +60,17 @@ const AuthController = {
    * Reset password
    * @param req - Express request object
    * @param res - Express response object
-   * @param next - Express next function
    */
-  passwordReset: async (req: Request, res: Response, next: NextFunction) => {
+  passwordReset: async (req: Request, res: Response) => {
     try {
       const { email } = req.body;
       const result = await AuthService.passwordReset(email);
       res.status(httpStatus.OK).json(result);
     } catch (error) {
-      next(error);
+      throw ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -72,15 +78,17 @@ const AuthController = {
    * Verify email
    * @param req - Express request object
    * @param res - Express response object
-   * @param next - Express next function
    */
-  verifyEmail: async (req: Request, res: Response, next: NextFunction) => {
+  verifyEmail: async (req: Request, res: Response) => {
     try {
       const { token } = req.body;
       const result = await AuthService.verifyEmail(token);
       res.status(httpStatus.OK).json(result);
     } catch (error) {
-      next(error);
+      throw ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -88,15 +96,17 @@ const AuthController = {
    * Enable 2FA
    * @param req - Express request object
    * @param res - Express response object
-   * @param next - Express next function
    */
-  enable2FA: async (req: Request, res: Response, next: NextFunction) => {
+  enableTwoFa: async (req: Request, res: Response) => {
     try {
-      const { userId } = req.body;
-      await UserService.updateUser(userId, { twoFAEnabled: true });
-      res.status(httpStatus.OK).json({ message: "2FA enabled successfully" });
+      const { email, token } = req.body;
+      const result = await AuthService.enableTwoFa(email, token);
+      res.status(httpStatus.OK).json(result);
     } catch (error) {
-      next(error);
+      throw ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -104,15 +114,53 @@ const AuthController = {
    * Disable 2FA
    * @param req - Express request object
    * @param res - Express response object
-   * @param next - Express next function
    */
-  disable2FA: async (req: Request, res: Response, next: NextFunction) => {
+  disableTwoFa: async (req: Request, res: Response) => {
     try {
-      const { userId } = req.body;
-      await UserService.updateUser(userId, { twoFAEnabled: false });
-      res.status(httpStatus.OK).json({ message: "2FA disabled successfully" });
+      const { email, token } = req.body;
+      const result = await AuthService.disableTwoFa(email, token);
+      res.status(httpStatus.OK).json(result);
     } catch (error) {
-      next(error);
+      throw ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
+    }
+  },
+
+  /**
+   * Request an OTP for 2FA
+   * @param req - Express request object
+   * @param res - Express response object
+   */
+  requestOtp: async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      const result = await AuthService.requestOtp(email);
+      res.status(httpStatus.OK).json(result);
+    } catch (error) {
+      throw ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
+    }
+  },
+
+  /**
+   * Verify OTP for 2FA
+   * @param req - Express request object
+   * @param res - Express response object
+   */
+  verifyOtp: async (req: Request, res: Response) => {
+    try {
+      const { email, token } = req.body;
+      const result = await AuthService.verifyOtp(email, token);
+      res.status(httpStatus.OK).json(result);
+    } catch (error) {
+      throw ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 };

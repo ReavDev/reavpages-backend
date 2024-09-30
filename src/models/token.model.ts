@@ -2,6 +2,7 @@ import mongoose, { Schema } from "mongoose";
 import { IToken, ITokenModel } from "../types/token.types";
 import toJSON from "./plugins/toJSON.plugin";
 import paginate from "./plugins/paginate.plugin";
+import bcrypt from "bcryptjs";
 
 /**
  * Token schema definition.
@@ -18,10 +19,6 @@ const tokenSchema: Schema<IToken> = new Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
-    },
-    userEmail: {
-      type: String,
       required: true,
     },
     type: {
@@ -42,6 +39,12 @@ const tokenSchema: Schema<IToken> = new Schema(
       type: Boolean,
       default: false,
     },
+    otpRequestCount: {
+      type: Number,
+    },
+    otpCooldownPeriod: {
+      type: Number,
+    },
   },
   {
     timestamps: true,
@@ -51,6 +54,18 @@ const tokenSchema: Schema<IToken> = new Schema(
 // Apply the plugins to the user schema
 tokenSchema.plugin(toJSON);
 tokenSchema.plugin(paginate);
+
+/**
+ * Pre-save middleware to hash the token before saving the token document if the token field is modified.
+ *
+ * @param next - The callback function to pass control to the next middleware.
+ */
+tokenSchema.pre<IToken>("save", async function (next) {
+  if (this.isModified("token")) {
+    this.token = await bcrypt.hash(this.token, 10);
+  }
+  next();
+});
 
 /**
  * The Token model based on the Token schema.

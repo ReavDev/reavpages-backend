@@ -1,5 +1,6 @@
 import { Router } from "express";
 import AuthController from "../controllers/auth.controller";
+import { authGuard } from "../guards/auth.guard";
 
 const router = Router();
 
@@ -13,12 +14,18 @@ router.post("/login", AuthController.login);
 router.post("/password-reset", AuthController.passwordReset);
 
 // Route for email verification
-router.post("/verify-email", AuthController.verifyEmail);
+router.post("/verify-email", authGuard, AuthController.verifyEmail);
 
 // Route for enabling 2FA
-router.post("/enable-2fa", AuthController.enable2FA);
+router.post("/enable-2fa", authGuard, AuthController.enableTwoFa);
 
 // Route for disabling 2FA
-router.post("/disable-2fa", AuthController.disable2FA);
+router.post("/disable-2fa", authGuard, AuthController.disableTwoFa);
+
+// Route for requesting an OTP for 2FA
+router.post("/request-otp", AuthController.requestOtp);
+
+// Route for verifying OTP
+router.post("/verify-otp", AuthController.verifyOtp);
 
 export default router;

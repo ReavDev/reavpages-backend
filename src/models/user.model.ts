@@ -50,14 +50,18 @@ const userSchema: Schema<IUser> = new Schema(
       type: Boolean,
       default: false,
     },
-    twoFAEnabled: {
+    phone: {
+      type: String,
+      required: false,
+    },
+    twoFaEnabled: {
       type: Boolean,
       default: false,
     },
-    twoFAType: {
+    twoFaType: {
       type: String,
-      enum: ["email", "phone"],
-      default: "email",
+      enum: ["phone", "thirdParty"],
+      default: "phone",
     },
     role: {
       type: String,
@@ -109,7 +113,7 @@ userSchema.methods.isPasswordMatch = async function (
  */
 userSchema.pre<IUser>("save", async function (next) {
   if (this.isModified("password")) {
-    this.password = await bcrypt.hash(this.password, 8);
+    this.password = await bcrypt.hash(this.password, 10);
   }
   next();
 });
