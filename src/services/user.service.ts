@@ -19,7 +19,7 @@ const UserService = {
     try {
       const users = await User.paginate(filter, options);
       return users;
-    } catch (error) {
+    } catch {
       throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Error querying users");
     }
   },
@@ -37,7 +37,7 @@ const UserService = {
         throw ApiError(httpStatus.NOT_FOUND, "No user found with this email");
       }
       return user;
-    } catch (error) {
+    } catch {
       throw ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
         "Error fetching user by email",
@@ -58,7 +58,7 @@ const UserService = {
         throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
       }
       return user;
-    } catch (error) {
+    } catch {
       throw ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
         "Error fetching user by ID",
@@ -82,7 +82,7 @@ const UserService = {
       const user = new User(userData);
       await user.save();
       return user;
-    } catch (error) {
+    } catch {
       throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Error creating user");
     }
   },
@@ -106,7 +106,7 @@ const UserService = {
         throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
       }
       return user;
-    } catch (error) {
+    } catch {
       throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Error updating user");
     }
   },
@@ -124,7 +124,7 @@ const UserService = {
         throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
       }
       return user;
-    } catch (error) {
+    } catch {
       throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Error deleting user");
     }
   },

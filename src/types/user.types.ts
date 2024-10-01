@@ -4,17 +4,11 @@ import mongoose, { Document, Model, FilterQuery } from "mongoose";
  * Interface representing a User document in MongoDB.
  */
 export interface IUser extends Document {
-   /**
-   * The unique identifier of the user.
-   * @example "60c72b2f9b1e8b001f8e4e67"
-   */
-  _id: string;
-  
   /**
    * The unique identifier of the user.
    * @example "60c72b2f9b1e8b001f8e4e67"
    */
-  id: string;
+  _id: string;
 
   /**
    * The first name of the user.
@@ -81,6 +75,20 @@ export interface IUser extends Document {
    * @throws {Error} - Throws an error if password comparison fails.
    */
   isPasswordMatch(password: string): Promise<boolean>;
+
+  /**
+   * The date and time when the token document was created.
+   * Automatically added by Mongoose when `timestamps: true` is enabled.
+   * @type {Date}
+   */
+  createdAt: Date;
+
+  /**
+   * The date and time when the token document was last updated.
+   * Automatically updated by Mongoose when the document is modified, provided `timestamps: true`.
+   * @type {Date}
+   */
+  updatedAt: Date;
 }
 
 /**

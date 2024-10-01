@@ -7,6 +7,12 @@ import mongoose, { Document, Model, FilterQuery } from "mongoose";
  */
 export interface IToken extends Document {
   /**
+   * The unique identifier of the token.
+   * @example "60c72b2f9b1e8b001f8e4e67"
+   */
+  _id: string;
+
+  /**
    * The actual token string.
    * @type {string}
    */
@@ -54,6 +60,20 @@ export interface IToken extends Document {
    * @type {number}
    */
   otpCooldownPeriod: number;
+
+  /**
+   * The date and time when the token document was created.
+   * Automatically added by Mongoose when `timestamps: true` is enabled.
+   * @type {Date}
+   */
+  createdAt: Date;
+
+  /**
+   * The date and time when the token document was last updated.
+   * Automatically updated by Mongoose when the document is modified, provided `timestamps: true`.
+   * @type {Date}
+   */
+  updatedAt: Date;
 }
 
 /**

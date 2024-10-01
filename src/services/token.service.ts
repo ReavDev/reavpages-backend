@@ -7,7 +7,7 @@ import { IUser } from "../types/user.types";
 import { IToken } from "../types/token.types";
 import Token from "../models/token.model";
 import ApiError from "../utils/apiErrorHandler.util";
-import mongoose, { FilterQuery, ObjectId } from "mongoose";
+import mongoose, { FilterQuery } from "mongoose";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
@@ -43,7 +43,7 @@ const TokenService = {
         // Generate a 6-digit OTP
         return crypto.randomInt(100000, 999999).toString();
       }
-    } catch (error) {
+    } catch {
       throw ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
         "Token generation failed",
@@ -103,7 +103,7 @@ const TokenService = {
         throw ApiError(httpStatus.NOT_FOUND, "Token not found");
       }
       return token;
-    } catch (error) {
+    } catch {
       throw ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
         "Error retrieving token",
@@ -125,7 +125,7 @@ const TokenService = {
     try {
       const tokens = await Token.paginate(filter, options);
       return tokens;
-    } catch (error) {
+    } catch {
       throw ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
         "Failed to query tokens",
@@ -179,7 +179,7 @@ const TokenService = {
         // Check if token has expired
         if (payload.exp && moment().isAfter(payload.exp)) {
           throw ApiError(httpStatus.UNAUTHORIZED, "Expired token");
-        }        
+        }
 
         // Extra validation for refresh token
         if (type === "refresh") {
@@ -189,12 +189,16 @@ const TokenService = {
 
           const tokenDoc = await Token.findOne({ userId: id, type, tokenType });
           if (!tokenDoc) {
-            throw ApiError(httpStatus.NOT_FOUND, "Token not found, kindly generate a valid token");
+            throw ApiError(
+              httpStatus.NOT_FOUND,
+              "Token not found, kindly generate a valid token",
+            );
           }
-  
+
           if (moment().isAfter(Math.floor(tokenDoc.expires.getTime() / 1000))) {
+            await Token.findByIdAndDelete(tokenDoc._id);
             throw ApiError(httpStatus.UNAUTHORIZED, "Expired token");
-          }    
+          }
           if (!tokenDoc || !(await bcrypt.compare(token, tokenDoc.token))) {
             throw ApiError(httpStatus.UNAUTHORIZED, "Invalid token");
           }
@@ -209,19 +213,32 @@ const TokenService = {
 
         const tokenDoc = await Token.findOne({ userId: id, type, tokenType });
         if (!tokenDoc) {
-          throw ApiError(httpStatus.NOT_FOUND, "Token not found, kindly generate a valid token");
+          throw ApiError(
+            httpStatus.NOT_FOUND,
+            "Token not found, kindly generate a valid token",
+          );
         }
 
         // Check if token has expired
         if (moment().isAfter(Math.floor(tokenDoc.expires.getTime() / 1000))) {
           throw ApiError(httpStatus.UNAUTHORIZED, "Token has expired");
-        }     
+        }
 
         const isValid = await bcrypt.compare(token, tokenDoc.token);
         if (!isValid) {
-          throw ApiError(httpStatus.UNAUTHORIZED, "Invalid or expired OTP token");
+          throw ApiError(
+            httpStatus.UNAUTHORIZED,
+            "Invalid or expired OTP token",
+          );
         }
 
+        const result = await Token.findByIdAndDelete(tokenDoc._id);
+        if (!result) {
+          throw ApiError(
+            httpStatus.NOT_FOUND,
+            "Token not found or already deleted",
+          );
+        }
         return true;
       }
     } catch {
@@ -235,21 +252,21 @@ const TokenService = {
    * @returns Authentication tokens including access and refresh tokens
    */
   generateAuthTokens: async (
-    user: Partial<IUser>
+    user: Partial<IUser>,
   ): Promise<{
     access: { token: string; expires: Date };
     refresh: { token: string; expires: Date };
   }> => {
     try {
       if (!user._id) {
-        throw ApiError(httpStatus.BAD_REQUEST, "User ID not provided")
+        throw ApiError(httpStatus.BAD_REQUEST, "User ID not provided");
       }
 
       const accessTokenExpires = moment().add(
         config.token.accessExpirationMinutes,
         "minutes",
       );
-    
+
       const accessToken = TokenService.generateToken({
         userId: new mongoose.Types.ObjectId(user._id),
         expires: accessTokenExpires.toDate(),
@@ -303,52 +320,43 @@ const TokenService = {
    */
   canGenerateOtp: async (userId: string): Promise<boolean> => {
     const now = moment();
-    const timeWindowAgo = now.subtract(
-      config.token.otpRequestsWindow,
-      "minutes",
-    );
 
-    // Find existing OTP document for the user within the time window
-    const otpToken = await Token.findOne({
+    // Find existing OTP for the user
+    const otpTokenDoc = await Token.findOne({
       userId,
       type: "otp",
-      createdAt: { $gte: timeWindowAgo.toDate() },
     });
 
-    if (!otpToken) {
+    // No OTP doc found, allow OTP generation
+    if (!otpTokenDoc) {
       return true;
     }
 
-    const lastOtpTime = moment(otpToken.createdAt);
+    // Calculate time since creation and last update
+    const createdAt = moment(otpTokenDoc.createdAt);
+    const updatedAt = moment(otpTokenDoc.updatedAt);
+    const timeSinceCreation = now.diff(createdAt, "minutes");
+    const timeSinceLastUpdate = now.diff(updatedAt, "minutes");
 
-    // Check if maximum requests were hit and apply extended cooldown
-    if (otpToken.otpRequestCount >= config.token.otpMaxRequests) {
-      const cooldownEndTime = lastOtpTime.add(
-        config.token.otpExtendedCooldownTime,
-        "minutes",
-      );
-
-      await TokenService.updateToken(otpToken._id.toString(), {
-        otpCooldownPeriod: config.token.otpExtendedCooldownTime,
-      });
-
-      return now.isAfter(cooldownEndTime);
+    // Check if the user is in cooldown (1 minute for recent update, 1 hour for extended rate-limiting)
+    if (timeSinceLastUpdate <= otpTokenDoc.otpCooldownPeriod) {
+      return false;
     }
 
-    // Normal cooldown check
-    const isInCooldown = lastOtpTime
-      .add(config.token.otpCooldownTime, "minutes")
-      .isAfter(now);
-
-    // Update count and cooldown if not in cooldown
-    if (!isInCooldown) {
-      otpToken.otpRequestCount = otpToken.otpRequestCount
-        ? otpToken.otpRequestCount + 1
-        : 1;
-      await otpToken.save();
+    // User has requested >= 5 OTPs within 10 minutes, enforce 1 hour cooldown
+    if (
+      otpTokenDoc.otpRequestCount >= config.token.otpMaxRequests &&
+      timeSinceCreation <= config.token.otpRequestsWindow
+    ) {
+      otpTokenDoc.otpCooldownPeriod = config.token.otpExtendedCooldownTime;
+      await otpTokenDoc.save();
+      return false;
     }
 
-    return !isInCooldown;
+    // Reset the cooldown period to initial cooldown
+    otpTokenDoc.otpCooldownPeriod = config.token.otpCooldownTime;
+    await otpTokenDoc.save();
+    return true;
   },
 
   /**
@@ -383,20 +391,35 @@ const TokenService = {
       );
 
       const otpToken = TokenService.generateToken({
-        userId: new mongoose.Types.ObjectId(user.id),
+        userId: new mongoose.Types.ObjectId(user._id),
         expires: otpExpires.toDate(),
         type,
         tokenType: "otp",
       });
 
-      await TokenService.createToken({
-        token: otpToken,
-        userId: new mongoose.Types.ObjectId(user.id),
-        tokenType: "otp",
-        type,
-        expires: expires.toDate(),
-        cooldown: config.token.otpCooldownTime,
+      // Find an existing OTP document
+      const existingOtpDoc = await Token.findOne({
+        userId: user._id,
+        type: "otp",
       });
+
+      if (existingOtpDoc) {
+        existingOtpDoc.token = otpToken;
+        existingOtpDoc.otpRequestCount += 1;
+
+        await existingOtpDoc.save();
+      } else {
+        await TokenService.createToken({
+          token: otpToken,
+          userId: new mongoose.Types.ObjectId(user._id),
+          tokenType: "otp",
+          type,
+          expires: otpExpires.toDate(),
+          blacklisted: false,
+          otpCooldownPeriod: config.token.otpCooldownTime,
+          otpRequestCount: 1,
+        });
+      }
 
       return otpToken;
     } catch {

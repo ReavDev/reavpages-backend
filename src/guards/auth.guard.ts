@@ -36,13 +36,19 @@ export const authGuard = async (
     // Verify the token and extract the payload
     const payload = await TokenService.verifyToken(token, "access", "jwt");
 
-    // If the payload doesn't contain userEmail, throw a User not found error
-    if (!payload.userEmail) {
-      return next(ApiError(httpStatus.NOT_FOUND, "User not found"));
+    if (typeof payload === "boolean") {
+      if (!payload) {
+        throw ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
+      }
+      throw ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
+    }
+
+    if (!payload || !payload.sub) {
+      throw ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
     }
 
     // Fetch the user by their email from the payload
-    const user = await UserService.getUserByEmail(payload.userEmail);
+    const user = await UserService.getUserById(payload.sub);
 
     // Ensure the user exists and has a defined role
     if (!user || typeof user.role === "undefined") {

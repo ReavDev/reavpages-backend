@@ -41,7 +41,7 @@ const AuthService = {
       const user = await UserService.createUser({ ...userData, role });
 
       // Generate JWT tokens
-      const tokens = await TokenService.generateAuthTokens(user.email);
+      const tokens = await TokenService.generateAuthTokens({ _id: user._id });
 
       // Send welcome email
       await EmailService.sendWelcomeEmail(user.email);
@@ -85,9 +85,9 @@ const AuthService = {
         await AuthService.verifyOtp(email, otp);
       }
 
-      const tokens = await TokenService.generateAuthTokens(email);
+      const tokens = await TokenService.generateAuthTokens({ _id: user._id });
       return { user, tokens };
-    } catch (error) {
+    } catch {
       throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Login failed");
     }
   },
@@ -166,8 +166,19 @@ const AuthService = {
         "otp",
       );
 
-      // Find the user by email
-      const user = await UserService.getUserByEmail(payload.userEmail);
+      if (typeof payload === "boolean") {
+        if (!payload) {
+          throw ApiError(httpStatus.BAD_REQUEST, "Email verification failed");
+        }
+        throw ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
+      }
+
+      if (!payload || !payload.sub) {
+        throw ApiError(httpStatus.BAD_REQUEST, "Email verification failed");
+      }
+
+      // Find the user by id
+      const user = await UserService.getUserById(payload.sub);
       if (!user) {
         throw ApiError(httpStatus.NOT_FOUND, "User not found");
       }
@@ -177,10 +188,7 @@ const AuthService = {
       }
 
       // Update the isEmailVerified field
-      await UserService.updateUser(user.id, { isEmailVerified: true });
-
-      // Cleanup: delete the token after successful verification
-      await TokenService.deleteToken(token);
+      await UserService.updateUser(user._id, { isEmailVerified: true });
 
       return { message: "Email verified successfully" };
     } catch {
@@ -205,7 +213,7 @@ const AuthService = {
 
       // Enable 2FA by updating the status
       const user = await UserService.getUserByEmail(email);
-      await UserService.updateUser(user.id, {
+      await UserService.updateUser(user._id, {
         twoFaEnabled: true,
       });
 
@@ -229,7 +237,7 @@ const AuthService = {
 
       // Disable 2FA by updating the status
       const user = await UserService.getUserByEmail(email);
-      await UserService.updateUser(user.id, {
+      await UserService.updateUser(user._id, {
         twoFaEnabled: false,
       });
 
