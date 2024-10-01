@@ -100,8 +100,12 @@ const AuthController = {
    */
   updatePassword: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { email, otp, newPassword } = req.body;
-      const result = await AuthService.updatePassword(email, otp, newPassword);
+      const { email, token, newPassword } = req.body;
+      const result = await AuthService.updatePassword(
+        email,
+        token,
+        newPassword,
+      );
 
       res.status(httpStatus.OK).json(result);
     } catch (error) {

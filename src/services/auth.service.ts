@@ -178,12 +178,12 @@ const AuthService = {
   /**
    * Verify OTP and update the user's password
    * @param email - User's email address
-   * @param otp - The OTP sent to the user for verification
+   * @param token - The OTP sent to the user for verification
    * @param newPassword - The new password to be set for the user
    * @returns Success message
    * @throws ApiError if the OTP is invalid or if the new password doesn't meet the criteria
    */
-  updatePassword: async (email: string, otp: string, newPassword: string) => {
+  updatePassword: async (email: string, token: string, newPassword: string) => {
     try {
       // Validate new password
       if (!newPassword || newPassword.length < 6) {
@@ -206,7 +206,7 @@ const AuthService = {
       }
 
       // Verify the OTP
-      await TokenService.verifyToken(otp, "resetPassword", "otp");
+      await TokenService.verifyToken(token, "resetPassword", "otp");
 
       // Update the password
       await UserService.updateUser(user._id, {
