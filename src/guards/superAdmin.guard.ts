@@ -29,7 +29,7 @@ export const superAdminGuard = async (
     // If no token is provided, throw an unauthorized error
     if (!token) {
       return next(
-        ApiError(httpStatus.UNAUTHORIZED, "Access token not provided"),
+        new ApiError(httpStatus.UNAUTHORIZED, "Access token not provided"),
       );
     }
 
@@ -38,13 +38,13 @@ export const superAdminGuard = async (
 
     if (typeof payload === "boolean") {
       if (!payload) {
-        throw ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
+        throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
       }
-      throw ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
+      throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
     }
 
     if (!payload || !payload.sub) {
-      throw ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
+      throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
     }
 
     // Fetch the user by their email from the payload
@@ -53,7 +53,7 @@ export const superAdminGuard = async (
     // Check if the user has the 'superAdmin' role
     if (user.role !== "superAdmin") {
       return next(
-        ApiError(
+        new ApiError(
           httpStatus.FORBIDDEN,
           "Forbidden: Super Admin access required",
         ),
@@ -62,10 +62,15 @@ export const superAdminGuard = async (
 
     // Proceed with request
     next();
-  } catch {
-    // If any error occurs, throw an internal server error
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return next(error);
+    }
     return next(
-      ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Something went wrong"),
+      new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      ),
     );
   }
 };

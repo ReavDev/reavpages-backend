@@ -66,6 +66,21 @@ userSchema.plugin(toJSON);
 userSchema.plugin(paginate);
 
 /**
+ * Checks if the provided email is already taken by another user.
+ *
+ * @param email - The email address to check.
+ * @param excludeUserId - An optional user ID to exclude from the check (useful when updating a user).
+ * @returns A promise that resolves to `true` if the email is taken, otherwise `false`.
+ */
+userSchema.statics.isEmailTaken = async function (
+  email: string,
+  excludeUserId?: mongoose.Types.ObjectId,
+): Promise<boolean> {
+  const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
+  return !!user;
+};
+
+/**
  * Compares the provided password with the user's stored hashed password.
  *
  * @param password - The plain text password to compare.

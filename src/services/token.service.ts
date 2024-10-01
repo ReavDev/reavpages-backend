@@ -24,7 +24,7 @@ const TokenService = {
     const { userId, expires, type, tokenType } = tokenData;
 
     if (!tokenData) {
-      throw ApiError(httpStatus.BAD_REQUEST, "Token data not provided");
+      throw new ApiError(httpStatus.BAD_REQUEST, "Token data not provided");
     }
 
     try {
@@ -43,10 +43,13 @@ const TokenService = {
         // Generate a 6-digit OTP
         return crypto.randomInt(100000, 999999).toString();
       }
-    } catch {
-      throw ApiError(
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        "Token generation failed",
+        "An unexpected error occurred",
       );
     }
   },
@@ -62,7 +65,10 @@ const TokenService = {
       await token.save();
       return token;
     } catch {
-      throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to save token");
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -82,11 +88,17 @@ const TokenService = {
         new: true,
       });
       if (!token) {
-        throw ApiError(httpStatus.NOT_FOUND, "No token found with this ID");
+        throw new ApiError(httpStatus.NOT_FOUND, "No token found with this ID");
       }
       return token;
-    } catch {
-      throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Error updating token");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -100,13 +112,16 @@ const TokenService = {
     try {
       const token = await Token.findById(tokenId);
       if (!token) {
-        throw ApiError(httpStatus.NOT_FOUND, "Token not found");
+        throw new ApiError(httpStatus.NOT_FOUND, "Token not found");
       }
       return token;
-    } catch {
-      throw ApiError(
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        "Error retrieving token",
+        "An unexpected error occurred",
       );
     }
   },
@@ -126,9 +141,9 @@ const TokenService = {
       const tokens = await Token.paginate(filter, options);
       return tokens;
     } catch {
-      throw ApiError(
+      throw new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        "Failed to query tokens",
+        "An unexpected error occurred",
       );
     }
   },
@@ -143,15 +158,18 @@ const TokenService = {
     try {
       const result = await Token.findByIdAndDelete(tokenId);
       if (!result) {
-        throw ApiError(
+        throw new ApiError(
           httpStatus.NOT_FOUND,
           "Token not found or already deleted",
         );
       }
-    } catch {
-      throw ApiError(
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        "Failed to delete token",
+        "An unexpected error occurred",
       );
     }
   },
@@ -178,18 +196,21 @@ const TokenService = {
 
         // Check if token has expired
         if (payload.exp && moment().isAfter(payload.exp)) {
-          throw ApiError(httpStatus.UNAUTHORIZED, "Expired token");
+          throw new ApiError(httpStatus.UNAUTHORIZED, "Expired token");
         }
 
         // Extra validation for refresh token
         if (type === "refresh") {
           if (!id) {
-            throw ApiError(httpStatus.BAD_REQUEST, "User ID is not provided");
+            throw new ApiError(
+              httpStatus.BAD_REQUEST,
+              "User ID is not provided",
+            );
           }
 
           const tokenDoc = await Token.findOne({ userId: id, type, tokenType });
           if (!tokenDoc) {
-            throw ApiError(
+            throw new ApiError(
               httpStatus.NOT_FOUND,
               "Token not found, kindly generate a valid token",
             );
@@ -197,10 +218,10 @@ const TokenService = {
 
           if (moment().isAfter(Math.floor(tokenDoc.expires.getTime() / 1000))) {
             await Token.findByIdAndDelete(tokenDoc._id);
-            throw ApiError(httpStatus.UNAUTHORIZED, "Expired token");
+            throw new ApiError(httpStatus.UNAUTHORIZED, "Expired token");
           }
           if (!tokenDoc || !(await bcrypt.compare(token, tokenDoc.token))) {
-            throw ApiError(httpStatus.UNAUTHORIZED, "Invalid token");
+            throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid token");
           }
         }
 
@@ -208,12 +229,12 @@ const TokenService = {
       } else {
         // OTP token verification
         if (!id) {
-          throw ApiError(httpStatus.BAD_REQUEST, "User ID is not provided");
+          throw new ApiError(httpStatus.BAD_REQUEST, "User ID is not provided");
         }
 
         const tokenDoc = await Token.findOne({ userId: id, type, tokenType });
         if (!tokenDoc) {
-          throw ApiError(
+          throw new ApiError(
             httpStatus.NOT_FOUND,
             "Token not found, kindly generate a valid token",
           );
@@ -221,12 +242,12 @@ const TokenService = {
 
         // Check if token has expired
         if (moment().isAfter(Math.floor(tokenDoc.expires.getTime() / 1000))) {
-          throw ApiError(httpStatus.UNAUTHORIZED, "Token has expired");
+          throw new ApiError(httpStatus.UNAUTHORIZED, "Token has expired");
         }
 
         const isValid = await bcrypt.compare(token, tokenDoc.token);
         if (!isValid) {
-          throw ApiError(
+          throw new ApiError(
             httpStatus.UNAUTHORIZED,
             "Invalid or expired OTP token",
           );
@@ -234,15 +255,21 @@ const TokenService = {
 
         const result = await Token.findByIdAndDelete(tokenDoc._id);
         if (!result) {
-          throw ApiError(
+          throw new ApiError(
             httpStatus.NOT_FOUND,
             "Token not found or already deleted",
           );
         }
         return true;
       }
-    } catch {
-      throw ApiError(httpStatus.UNAUTHORIZED, "Token verification failed");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -259,7 +286,7 @@ const TokenService = {
   }> => {
     try {
       if (!user._id) {
-        throw ApiError(httpStatus.BAD_REQUEST, "User ID not provided");
+        throw new ApiError(httpStatus.BAD_REQUEST, "User ID not provided");
       }
 
       const accessTokenExpires = moment().add(
@@ -305,10 +332,13 @@ const TokenService = {
           expires: refreshTokenExpires.toDate(),
         },
       };
-    } catch {
-      throw ApiError(
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        "Failed to generate authentication tokens",
+        "An unexpected error occurred",
       );
     }
   },
@@ -373,13 +403,13 @@ const TokenService = {
       const user = await userService.getUserById(id);
 
       if (!user) {
-        throw ApiError(httpStatus.NOT_FOUND, "User not found");
+        throw new ApiError(httpStatus.NOT_FOUND, "User not found");
       }
 
       const canGenerate = await TokenService.canGenerateOtp(id);
 
       if (!canGenerate) {
-        throw ApiError(
+        throw new ApiError(
           httpStatus.FORBIDDEN,
           "Too many OTP requests. Please try again later.",
         );
@@ -422,10 +452,13 @@ const TokenService = {
       }
 
       return otpToken;
-    } catch {
-      throw ApiError(
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        "Failed to generate OTP",
+        "An unexpected error occurred",
       );
     }
   },

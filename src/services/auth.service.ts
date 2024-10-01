@@ -8,6 +8,7 @@ import config from "../config/config";
 import User from "../models/user.model";
 import validator from "validator";
 import MessagingService from "./messaging.service";
+import mongoose from "mongoose";
 
 /**
  * Auth service that provides various authentication-related functionalities.
@@ -25,26 +26,26 @@ const AuthService = {
       let role: "user" | "admin" | "superAdmin" | undefined = undefined;
 
       if (!userData || !userData.email) {
-        throw ApiError(httpStatus.BAD_REQUEST, "User Data not provided");
+        throw new ApiError(httpStatus.BAD_REQUEST, "User Data not provided");
       }
 
       // Validate email
       if (!validator.isEmail(userData.email || "")) {
-        throw ApiError(httpStatus.BAD_REQUEST, "Invalid email format");
+        throw new ApiError(httpStatus.BAD_REQUEST, "Invalid email format");
       }
 
       // Validate password
       if (!userData.password || userData.password.length < 6) {
-        throw ApiError(
+        throw new ApiError(
           httpStatus.BAD_REQUEST,
-          "Password must be at least 8 characters long",
+          "Password must be at least 6 characters long",
         );
       }
       if (
         !userData.password.match(/\d/) ||
         !userData.password.match(/[a-zA-Z]/)
       ) {
-        throw ApiError(
+        throw new ApiError(
           httpStatus.BAD_REQUEST,
           "Password must contain at least one letter and one number",
         );
@@ -52,38 +53,10 @@ const AuthService = {
 
       // Check if email is already taken
       if (await User.isEmailTaken(userData.email)) {
-        throw ApiError(httpStatus.BAD_REQUEST, "Email already taken");
-      }
-
-      if (!userData || !userData.email) {
-        throw ApiError(httpStatus.BAD_REQUEST, "User Data not provided");
-      }
-
-      // Validate email
-      if (!validator.isEmail(userData.email || "")) {
-        throw ApiError(httpStatus.BAD_REQUEST, "Invalid email format");
-      }
-
-      // Validate password
-      if (!userData.password || userData.password.length < 6) {
-        throw ApiError(
+        throw new ApiError(
           httpStatus.BAD_REQUEST,
-          "Password must be at least 8 characters long",
+          "An account with this email address already exists. Please log in or reset your password if you've forgotten it",
         );
-      }
-      if (
-        !userData.password.match(/\d/) ||
-        !userData.password.match(/[a-zA-Z]/)
-      ) {
-        throw ApiError(
-          httpStatus.BAD_REQUEST,
-          "Password must contain at least one letter and one number",
-        );
-      }
-
-      // Check if email is already taken
-      if (await User.isEmailTaken(userData.email)) {
-        throw ApiError(httpStatus.BAD_REQUEST, "Email already taken");
       }
 
       // If the adminSecret is provided and correct, assign the super-admin role
@@ -93,7 +66,7 @@ const AuthService = {
         // Check if a super admin already exists
         const user = await User.findOne({ role: "superAdmin" });
         if (user) {
-          throw ApiError(
+          throw new ApiError(
             httpStatus.BAD_REQUEST,
             "A super admin already exists",
           );
@@ -113,10 +86,13 @@ const AuthService = {
       await AuthService.sendEmailVerification(user.email);
 
       return { user, tokens };
-    } catch {
-      throw ApiError(
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        "User registration failed",
+        "An unexpected error occurred",
       );
     }
   },
@@ -135,17 +111,20 @@ const AuthService = {
 
       // Check password
       if (!(await user.isPasswordMatch(password))) {
-        throw ApiError(httpStatus.UNAUTHORIZED, "Incorrect email or password");
+        throw new ApiError(
+          httpStatus.UNAUTHORIZED,
+          "Incorrect email or password",
+        );
       }
 
       // Check email verification
       if (!user.isEmailVerified) {
-        throw ApiError(httpStatus.UNAUTHORIZED, "Email not verified");
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Email not verified");
       }
 
       if (user.twoFaEnabled) {
         if (!otp) {
-          throw ApiError(httpStatus.UNAUTHORIZED, "2FA token is required");
+          throw new ApiError(httpStatus.UNAUTHORIZED, "2FA token is required");
         }
 
         await AuthService.verifyOtp(email, otp);
@@ -153,8 +132,14 @@ const AuthService = {
 
       const tokens = await TokenService.generateAuthTokens({ _id: user._id });
       return { user, tokens };
-    } catch {
-      throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Login failed");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -179,8 +164,14 @@ const AuthService = {
       await EmailService.sendPasswordResetEmail(email, resetPasswordToken);
 
       return { message: "Password reset email sent successfully" };
-    } catch {
-      throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Password reset failed");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -191,20 +182,27 @@ const AuthService = {
    */
   sendEmailVerification: async (email: string) => {
     try {
+      // Check if email exists
+      const user = await UserService.getUserByEmail(email);
+
       // Generate email verification token
-      const emailVerificationToken = await TokenService.generateOTP(
-        email,
-        "verifyEmail",
-      );
+      const emailVerificationToken = TokenService.generateToken({
+        userId: new mongoose.Types.ObjectId(user._id),
+        type: "verifyEmail",
+        tokenType: "jwt",
+      });
 
       // Send verification email
       await EmailService.sendEmailVerification(email, emailVerificationToken);
 
       return { message: "Verification email sent successfully" };
-    } catch {
-      throw ApiError(
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        "Email verification failed",
+        "An unexpected error occurred",
       );
     }
   },
@@ -219,7 +217,7 @@ const AuthService = {
     try {
       // Check if token is provided
       if (!token) {
-        throw ApiError(
+        throw new ApiError(
           httpStatus.UNAUTHORIZED,
           "Email verification token not provided",
         );
@@ -234,33 +232,39 @@ const AuthService = {
 
       if (typeof payload === "boolean") {
         if (!payload) {
-          throw ApiError(httpStatus.BAD_REQUEST, "Email verification failed");
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            "Email verification failed",
+          );
         }
-        throw ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
+        throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
       }
 
       if (!payload || !payload.sub) {
-        throw ApiError(httpStatus.BAD_REQUEST, "Email verification failed");
+        throw new ApiError(httpStatus.BAD_REQUEST, "Email verification failed");
       }
 
       // Find the user by id
       const user = await UserService.getUserById(payload.sub);
       if (!user) {
-        throw ApiError(httpStatus.NOT_FOUND, "User not found");
+        throw new ApiError(httpStatus.NOT_FOUND, "User not found");
       }
 
       if (user.isEmailVerified) {
-        throw ApiError(httpStatus.BAD_REQUEST, "Email already verified");
+        throw new ApiError(httpStatus.BAD_REQUEST, "Email already verified");
       }
 
       // Update the isEmailVerified field
       await UserService.updateUser(user._id, { isEmailVerified: true });
 
       return { message: "Email verified successfully" };
-    } catch {
-      throw ApiError(
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        "Email verification failed",
+        "An unexpected error occurred",
       );
     }
   },
@@ -284,8 +288,14 @@ const AuthService = {
       });
 
       return { message: "2FA enabled successfully" };
-    } catch {
-      throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Enabling 2FA failed");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -308,8 +318,14 @@ const AuthService = {
       });
 
       return { message: "2FA disabled successfully" };
-    } catch {
-      throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Disabling 2FA failed");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -324,17 +340,20 @@ const AuthService = {
     try {
       const user = await UserService.getUserByEmail(email);
       if (!user) {
-        throw ApiError(httpStatus.NOT_FOUND, "User not found");
+        throw new ApiError(httpStatus.NOT_FOUND, "User not found");
       }
 
       // Verify the provided 2FA token
       await TokenService.verifyToken(token, "twoFa", "otp");
 
       return { message: "2FA verified successfully" };
-    } catch {
-      throw ApiError(
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        "2FA verification failed",
+        "An unexpected error occurred",
       );
     }
   },
@@ -349,11 +368,11 @@ const AuthService = {
     try {
       const user = await UserService.getUserByEmail(email);
       if (!user) {
-        throw ApiError(httpStatus.NOT_FOUND, "User not found");
+        throw new ApiError(httpStatus.NOT_FOUND, "User not found");
       }
 
       if (!user.twoFaEnabled) {
-        throw ApiError(
+        throw new ApiError(
           httpStatus.BAD_REQUEST,
           "2FA is not enabled for this user",
         );
@@ -364,8 +383,14 @@ const AuthService = {
       await MessagingService.sendOtpMessage(user.phone, otp);
 
       return { message: "OTP sent successfully" };
-    } catch {
-      throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "OTP request failed");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 };

@@ -26,7 +26,10 @@ const MessagingService = {
         to,
       });
     } catch {
-      throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Something went wrong");
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -41,7 +44,10 @@ const MessagingService = {
       const text = `Your verification code is: ${token}`;
       MessagingService.sendMessage(to, text);
     } catch {
-      throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Something went wrong");
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 };

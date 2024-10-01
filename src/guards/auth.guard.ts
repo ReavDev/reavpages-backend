@@ -29,7 +29,7 @@ export const authGuard = async (
     // If no token is provided, throw an unauthorized error
     if (!token) {
       return next(
-        ApiError(httpStatus.UNAUTHORIZED, "Access token not provided"),
+        new ApiError(httpStatus.UNAUTHORIZED, "Access token not provided"),
       );
     }
 
@@ -38,13 +38,13 @@ export const authGuard = async (
 
     if (typeof payload === "boolean") {
       if (!payload) {
-        throw ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
+        throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
       }
-      throw ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
+      throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
     }
 
     if (!payload || !payload.sub) {
-      throw ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
+      throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
     }
 
     // Fetch the user by their email from the payload
@@ -52,15 +52,22 @@ export const authGuard = async (
 
     // Ensure the user exists and has a defined role
     if (!user || typeof user.role === "undefined") {
-      return next(ApiError(httpStatus.FORBIDDEN, "Forbidden: Access required"));
+      return next(
+        new ApiError(httpStatus.FORBIDDEN, "Forbidden: Access required"),
+      );
     }
 
     // Proceed with the request
     next();
-  } catch {
-    // If any error occurs, throw an internal server error
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return next(error);
+    }
     return next(
-      ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Something went wrong"),
+      new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      ),
     );
   }
 };

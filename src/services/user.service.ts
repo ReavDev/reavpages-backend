@@ -20,7 +20,10 @@ const UserService = {
       const users = await User.paginate(filter, options);
       return users;
     } catch {
-      throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Error querying users");
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -34,13 +37,19 @@ const UserService = {
     try {
       const user = await User.findOne({ email });
       if (!user) {
-        throw ApiError(httpStatus.NOT_FOUND, "No user found with this email");
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          "No user found with this email",
+        );
       }
       return user;
-    } catch {
-      throw ApiError(
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        "Error fetching user by email",
+        "An unexpected error occurred",
       );
     }
   },
@@ -55,13 +64,16 @@ const UserService = {
     try {
       const user = await User.findById(userId);
       if (!user) {
-        throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
+        throw new ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
       }
       return user;
-    } catch {
-      throw ApiError(
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        "Error fetching user by ID",
+        "An unexpected error occurred",
       );
     }
   },
@@ -76,14 +88,23 @@ const UserService = {
     try {
       const isEmailTaken = await User.isEmailTaken(userData.email ?? "");
       if (isEmailTaken) {
-        throw ApiError(httpStatus.BAD_REQUEST, "Email already in use");
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          "An account with this email address already exists. Please log in or reset your password if you've forgotten it",
+        );
       }
 
       const user = new User(userData);
       await user.save();
       return user;
-    } catch {
-      throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Error creating user");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -103,11 +124,17 @@ const UserService = {
         new: true,
       });
       if (!user) {
-        throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
+        throw new ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
       }
       return user;
-    } catch {
-      throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Error updating user");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 
@@ -121,11 +148,17 @@ const UserService = {
     try {
       const user = await User.findByIdAndDelete(userId);
       if (!user) {
-        throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
+        throw new ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
       }
       return user;
-    } catch {
-      throw ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Error deleting user");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
   },
 };

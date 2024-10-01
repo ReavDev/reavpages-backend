@@ -32,7 +32,7 @@ export const adminGuard = async (
     // If no token is provided, throw an unauthorized error
     if (!token) {
       return next(
-        ApiError(httpStatus.UNAUTHORIZED, "Access token not provided"),
+        new ApiError(httpStatus.UNAUTHORIZED, "Access token not provided"),
       );
     }
 
@@ -41,13 +41,13 @@ export const adminGuard = async (
 
     if (typeof payload === "boolean") {
       if (!payload) {
-        throw ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
+        throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
       }
-      throw ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
+      throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
     }
 
     if (!payload || !payload.sub) {
-      throw ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
+      throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
     }
 
     // Fetch the user by their email from the payload
@@ -56,16 +56,21 @@ export const adminGuard = async (
     // Check if the user has the 'admin' role
     if (user.role !== "admin") {
       return next(
-        ApiError(httpStatus.FORBIDDEN, "Forbidden: Admin access required"),
+        new ApiError(httpStatus.FORBIDDEN, "Forbidden: Admin access required"),
       );
     }
 
     // Proceed with the request
     next();
-  } catch {
-    // If any error occurs, throw an internal server error
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return next(error);
+    }
     return next(
-      ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Something went wrong"),
+      new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      ),
     );
   }
 };
