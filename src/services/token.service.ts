@@ -395,18 +395,21 @@ const TokenService = {
    * @param type - OTP type (resetPassword, verifyEmail)
    * @returns Generated OTP
    */
-  generateOTP: async (
-    id: string,
-    type: "resetPassword" | "verifyEmail" | "twoFa",
-  ): Promise<string> => {
+  generateOTP: async (tokenData: Partial<IToken>): Promise<string> => {
+    const { userId, type } = tokenData;
+
+    if (!tokenData || !userId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Token data not provided");
+    }
+
     try {
-      const user = await userService.getUserById(id);
+      const user = await userService.getUserById(userId.toString());
 
       if (!user) {
         throw new ApiError(httpStatus.NOT_FOUND, "User not found");
       }
 
-      const canGenerate = await TokenService.canGenerateOtp(id);
+      const canGenerate = await TokenService.canGenerateOtp(userId.toString());
 
       if (!canGenerate) {
         throw new ApiError(

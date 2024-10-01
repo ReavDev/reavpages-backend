@@ -11,7 +11,10 @@ router.post("/register", AuthController.register);
 router.post("/login", AuthController.login);
 
 // Route for password reset
-router.post("/password-reset", AuthController.passwordReset);
+router.post("/reset-password", AuthController.resetPassword);
+
+// Route for password update
+router.post("/update-password", AuthController.updatePassword);
 
 // Route for email verification
 router.post("/verify-email", authGuard, AuthController.verifyEmail);

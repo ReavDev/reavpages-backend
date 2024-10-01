@@ -11,6 +11,7 @@ const AuthController = {
    * Register a new user
    * @param req - Express request object
    * @param res - Express response object
+   * @param next - The Express next middleware function
    */
   register: async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -47,6 +48,7 @@ const AuthController = {
    * Login a user
    * @param req - Express request object
    * @param res - Express response object
+   * @param next - The Express next middleware function
    */
   login: async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -70,11 +72,37 @@ const AuthController = {
    * Reset password
    * @param req - Express request object
    * @param res - Express response object
+   * @param next - The Express next middleware function
    */
-  passwordReset: async (req: Request, res: Response, next: NextFunction) => {
+  resetPassword: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { email } = req.body;
-      const result = await AuthService.passwordReset(email);
+      const result = await AuthService.resetPassword(email);
+      res.status(httpStatus.OK).json(result);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return next(error);
+      }
+      return next(
+        new ApiError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          "An unexpected error occurred",
+        ),
+      );
+    }
+  },
+
+  /**
+   * Update password
+   * @param req - Express request object
+   * @param res - Express response object
+   * @param next - The Express next middleware function
+   */
+  updatePassword: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email, otp, newPassword } = req.body;
+      const result = await AuthService.updatePassword(email, otp, newPassword);
+
       res.status(httpStatus.OK).json(result);
     } catch (error) {
       if (error instanceof ApiError) {
@@ -93,6 +121,7 @@ const AuthController = {
    * Verify email
    * @param req - Express request object
    * @param res - Express response object
+   * @param next - The Express next middleware function
    */
   verifyEmail: async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -116,6 +145,7 @@ const AuthController = {
    * Enable 2FA
    * @param req - Express request object
    * @param res - Express response object
+   * @param next - The Express next middleware function
    */
   enableTwoFa: async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -139,6 +169,7 @@ const AuthController = {
    * Disable 2FA
    * @param req - Express request object
    * @param res - Express response object
+   * @param next - The Express next middleware function
    */
   disableTwoFa: async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -162,6 +193,7 @@ const AuthController = {
    * Request an OTP for 2FA
    * @param req - Express request object
    * @param res - Express response object
+   * @param next - The Express next middleware function
    */
   requestOtp: async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -185,6 +217,7 @@ const AuthController = {
    * Verify OTP for 2FA
    * @param req - Express request object
    * @param res - Express response object
+   * @param next - The Express next middleware function
    */
   verifyOtp: async (req: Request, res: Response, next: NextFunction) => {
     try {

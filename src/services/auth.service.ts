@@ -149,21 +149,71 @@ const AuthService = {
    * @returns Confirmation message
    * @throws ApiError if no user is found with the provided email
    */
-  passwordReset: async (email: string) => {
+  resetPassword: async (email: string) => {
     try {
       // Check if email exists
-      await UserService.getUserByEmail(email);
+      const user = await UserService.getUserByEmail(email);
 
       // Generate and store reset password token
-      const resetPasswordToken = await TokenService.generateOTP(
-        email,
-        "resetPassword",
-      );
+      const resetPasswordToken = await TokenService.generateOTP({
+        userId: new mongoose.Types.ObjectId(user._id),
+        type: "resetPassword",
+      });
 
       // Send password reset email
       await EmailService.sendPasswordResetEmail(email, resetPasswordToken);
 
       return { message: "Password reset email sent successfully" };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
+    }
+  },
+
+  /**
+   * Verify OTP and update the user's password
+   * @param email - User's email address
+   * @param otp - The OTP sent to the user for verification
+   * @param newPassword - The new password to be set for the user
+   * @returns Success message
+   * @throws ApiError if the OTP is invalid or if the new password doesn't meet the criteria
+   */
+  updatePassword: async (email: string, otp: string, newPassword: string) => {
+    try {
+      // Validate new password
+      if (!newPassword || newPassword.length < 6) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          "Password must be at least 6 characters long",
+        );
+      }
+      if (!newPassword.match(/\d/) || !newPassword.match(/[a-zA-Z]/)) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          "Password must contain at least one letter and one number",
+        );
+      }
+
+      // Fetch user by email
+      const user = await UserService.getUserByEmail(email);
+      if (!user) {
+        throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+      }
+
+      // Verify the OTP
+      await TokenService.verifyToken(otp, "resetPassword", "otp");
+
+      // Update the password
+      await UserService.updateUser(user._id, {
+        password: newPassword,
+      });
+
+      return { message: "Password updated successfully" };
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -379,7 +429,10 @@ const AuthService = {
       }
 
       // Generate and send OTP
-      const otp = await TokenService.generateOTP(email, "twoFa");
+      const otp = await TokenService.generateOTP({
+        userId: new mongoose.Types.ObjectId(user._id),
+        type: "twoFa",
+      });
       await MessagingService.sendOtpMessage(user.phone, otp);
 
       return { message: "OTP sent successfully" };
