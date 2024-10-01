@@ -14,16 +14,16 @@ router.post("/login", AuthController.login);
 router.post("/reset-password", AuthController.resetPassword);
 
 // Route for password update
-router.post("/update-password", AuthController.updatePassword);
+router.patch("/update-password", AuthController.updatePassword);
 
 // Route for email verification
-router.post("/verify-email", authGuard, AuthController.verifyEmail);
+router.patch("/verify-email", authGuard, AuthController.verifyEmail);
 
 // Route for enabling 2FA
-router.post("/enable-2fa", authGuard, AuthController.enableTwoFa);
+router.patch("/enable-2fa", authGuard, AuthController.enableTwoFa);
 
 // Route for disabling 2FA
-router.post("/disable-2fa", authGuard, AuthController.disableTwoFa);
+router.patch("/disable-2fa", authGuard, AuthController.disableTwoFa);
 
 // Route for requesting an OTP for 2FA
 router.post("/request-otp", AuthController.requestOtp);
