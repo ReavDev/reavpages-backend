@@ -122,6 +122,7 @@ const UserService = {
     try {
       const user = await User.findByIdAndUpdate(userId, updateData, {
         new: true,
+        runValidators: true,
       });
       if (!user) {
         throw new ApiError(httpStatus.NOT_FOUND, "No user found with this ID");

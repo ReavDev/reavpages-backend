@@ -9,6 +9,7 @@ import User from "../models/user.model";
 import validator from "validator";
 import MessagingService from "./messaging.service";
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 /**
  * Auth service that provides various authentication-related functionalities.
@@ -77,7 +78,9 @@ const AuthService = {
       const user = await UserService.createUser({ ...userData, role });
 
       // Generate JWT tokens
-      const tokens = await TokenService.generateAuthTokens({ _id: user._id });
+      const tokens = await TokenService.generateAuthTokens({
+        _id: user._id.toString(),
+      });
 
       // Send welcome email
       await EmailService.sendWelcomeEmail(user.email);
@@ -130,7 +133,9 @@ const AuthService = {
         await AuthService.verifyOtp(email, otp);
       }
 
-      const tokens = await TokenService.generateAuthTokens({ _id: user._id });
+      const tokens = await TokenService.generateAuthTokens({
+        _id: user._id.toString(),
+      });
       return { user, tokens };
     } catch (error) {
       if (error instanceof ApiError) {
@@ -185,7 +190,21 @@ const AuthService = {
    */
   updatePassword: async (email: string, token: string, newPassword: string) => {
     try {
+      // Fetch user by email
+      const user = await UserService.getUserByEmail(email);
+
+      if (!user) {
+        throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+      }
+
       // Validate new password
+      const isSamePassword = await bcrypt.compare(newPassword, user.password);
+      if (isSamePassword) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          "Previous password cannot be used as the new password",
+        );
+      }
       if (!newPassword || newPassword.length < 6) {
         throw new ApiError(
           httpStatus.BAD_REQUEST,
@@ -199,17 +218,16 @@ const AuthService = {
         );
       }
 
-      // Fetch user by email
-      const user = await UserService.getUserByEmail(email);
-      if (!user) {
-        throw new ApiError(httpStatus.NOT_FOUND, "User not found");
-      }
-
       // Verify the OTP
-      await TokenService.verifyToken(token, "resetPassword", "otp");
+      await TokenService.verifyToken(
+        token,
+        "resetPassword",
+        "otp",
+        user._id.toString(),
+      );
 
       // Update the password
-      await UserService.updateUser(user._id, {
+      await UserService.updateUser(user._id.toString(), {
         password: newPassword,
       });
 
@@ -305,7 +323,9 @@ const AuthService = {
       }
 
       // Update the isEmailVerified field
-      await UserService.updateUser(user._id, { isEmailVerified: true });
+      await UserService.updateUser(user._id.toString(), {
+        isEmailVerified: true,
+      });
 
       return { message: "Email verified successfully" };
     } catch (error) {
@@ -333,7 +353,7 @@ const AuthService = {
 
       // Enable 2FA by updating the status
       const user = await UserService.getUserByEmail(email);
-      await UserService.updateUser(user._id, {
+      await UserService.updateUser(user._id.toString(), {
         twoFaEnabled: true,
       });
 
@@ -363,7 +383,7 @@ const AuthService = {
 
       // Disable 2FA by updating the status
       const user = await UserService.getUserByEmail(email);
-      await UserService.updateUser(user._id, {
+      await UserService.updateUser(user._id.toString(), {
         twoFaEnabled: false,
       });
 
@@ -394,7 +414,12 @@ const AuthService = {
       }
 
       // Verify the provided 2FA token
-      await TokenService.verifyToken(token, "twoFa", "otp");
+      await TokenService.verifyToken(
+        token,
+        "twoFa",
+        "otp",
+        user._id.toString(),
+      );
 
       return { message: "2FA verified successfully" };
     } catch (error) {

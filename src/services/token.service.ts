@@ -86,6 +86,7 @@ const TokenService = {
     try {
       const token = await Token.findByIdAndUpdate(tokenId, updateData, {
         new: true,
+        runValidators: true,
       });
       if (!token) {
         throw new ApiError(httpStatus.NOT_FOUND, "No token found with this ID");
@@ -217,7 +218,7 @@ const TokenService = {
           }
 
           if (moment().isAfter(Math.floor(tokenDoc.expires.getTime() / 1000))) {
-            await Token.findByIdAndDelete(tokenDoc._id);
+            await Token.findByIdAndDelete(tokenDoc._id.toString());
             throw new ApiError(httpStatus.UNAUTHORIZED, "Expired token");
           }
           if (!tokenDoc || !(await bcrypt.compare(token, tokenDoc.token))) {
@@ -241,7 +242,9 @@ const TokenService = {
         }
 
         // Check if token has expired
-        if (moment().isAfter(Math.floor(tokenDoc.expires.getTime() / 1000))) {
+        const expirationTime =
+          Date.now() - config.token.otpExpirationMinutes * 60 * 1000;
+        if (tokenDoc.updatedAt.getTime() < expirationTime) {
           throw new ApiError(httpStatus.UNAUTHORIZED, "Token has expired");
         }
 
@@ -253,7 +256,7 @@ const TokenService = {
           );
         }
 
-        const result = await Token.findByIdAndDelete(tokenDoc._id);
+        const result = await Token.findByIdAndDelete(tokenDoc._id.toString());
         if (!result) {
           throw new ApiError(
             httpStatus.NOT_FOUND,
@@ -285,7 +288,7 @@ const TokenService = {
     refresh: { token: string; expires: Date };
   }> => {
     try {
-      if (!user._id) {
+      if (!user._id?.toString()) {
         throw new ApiError(httpStatus.BAD_REQUEST, "User ID not provided");
       }
 
@@ -349,6 +352,8 @@ const TokenService = {
    * @returns Promise resolving to true if allowed, false otherwise
    */
   canGenerateOtp: async (userId: string): Promise<boolean> => {
+    console.log("pinged");
+    
     const now = moment();
 
     // Find existing OTP for the user
@@ -360,6 +365,10 @@ const TokenService = {
     // No OTP doc found, allow OTP generation
     if (!otpTokenDoc) {
       return true;
+    }
+
+    if (otpTokenDoc.otpRequestCount >= config.token.otpMaxRequests) {
+      return false;
     }
 
     // Calculate time since creation and last update
@@ -432,15 +441,25 @@ const TokenService = {
 
       // Find an existing OTP document
       const existingOtpDoc = await Token.findOne({
-        userId: user._id,
-        type: "otp",
+        userId: user._id.toString(),
+        type,
+        tokenType: "otp",
       });
 
       if (existingOtpDoc) {
-        existingOtpDoc.token = otpToken;
-        existingOtpDoc.otpRequestCount += 1;
+        const updatedOtpRequestCount = existingOtpDoc.otpRequestCount + 1;
+        const updateData: Partial<IToken> = {
+          token: otpToken,
+          expires: moment()
+            .add(config.token.otpExpirationMinutes, "minutes")
+            .toDate(),
+          otpRequestCount: updatedOtpRequestCount,
+        };
 
-        await existingOtpDoc.save();
+        await TokenService.updateToken(
+          existingOtpDoc._id.toString(),
+          updateData,
+        );
       } else {
         await TokenService.createToken({
           token: otpToken,

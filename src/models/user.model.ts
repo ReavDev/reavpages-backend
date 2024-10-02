@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Query, UpdateQuery } from "mongoose";
 import bcrypt from "bcryptjs";
 import { IUser, IUserModel } from "../types/user.types";
 import toJSON from "./plugins/toJSON.plugin";
@@ -102,6 +102,38 @@ userSchema.pre<IUser>("save", async function (next) {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 10);
   }
+  next();
+});
+
+/**
+ * Pre-update middleware to hash the password before updating the user document if the password field is modified.
+ *
+ * @param next - The callback function to pass control to the next middleware.
+ */
+userSchema.pre<Query<IUser, IUser>>("updateOne", async function (next) {
+  const update = (this.getUpdate() as UpdateQuery<IUser>) || {};
+
+  if (update.password) {
+    update.password = await bcrypt.hash(update.password, 10);
+  }
+
+  this.setUpdate(update);
+  next();
+});
+
+/**
+ * Pre-update middleware to hash the password before updating the user document if the password field is modified.
+ *
+ * @param next - The callback function to pass control to the next middleware.
+ */
+userSchema.pre<Query<IUser, IUser>>("findOneAndUpdate", async function (next) {
+  const update = (this.getUpdate() as UpdateQuery<IUser>) || {};
+
+  if (update.password) {
+    update.password = await bcrypt.hash(update.password, 10);
+  }
+
+  this.setUpdate(update);
   next();
 });
 
