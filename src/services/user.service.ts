@@ -16,8 +16,15 @@ const UserService = {
    * @returns Paginated result of users
    */
   queryUsers: async (filter: FilterQuery<IUser>, options: PaginateOptions) => {
-    const users = await User.paginate(filter, options);
-    return users;
+    try {
+      const users = await User.paginate(filter, options);
+      return users;
+    } catch {
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
+    }
   },
 
   /**
@@ -27,11 +34,24 @@ const UserService = {
    * @throws ApiError if no user is found with the provided email
    */
   getUserByEmail: async (email: string): Promise<IUser> => {
-    const user = await User.findOne({ email });
-    if (!user) {
-      throw ApiError(httpStatus.NOT_FOUND, "No user found with this email");
+    try {
+      const user = await User.findOne({ email });
+      if (!user) {
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          "No user found with this email",
+        );
+      }
+      return user;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
-    return user;
   },
 
   /**
@@ -41,11 +61,21 @@ const UserService = {
    * @throws ApiError if no user is found with the provided ID
    */
   getUserById: async (userId: string): Promise<IUser> => {
-    const user = await User.findById(userId);
-    if (!user) {
-      throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
+      }
+      return user;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
-    return user;
   },
 
   /**
@@ -55,14 +85,27 @@ const UserService = {
    * @throws ApiError if the email is already in use
    */
   createUser: async (userData: Partial<IUser>): Promise<IUser> => {
-    const isEmailTaken = await User.isEmailTaken(userData.email ?? "");
-    if (isEmailTaken) {
-      throw ApiError(httpStatus.BAD_REQUEST, "Email already in use");
-    }
+    try {
+      const isEmailTaken = await User.isEmailTaken(userData.email ?? "");
+      if (isEmailTaken) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          "An account with this email address already exists. Please log in or reset your password if you've forgotten it",
+        );
+      }
 
-    const user = new User(userData);
-    await user.save();
-    return user;
+      const user = new User(userData);
+      await user.save();
+      return user;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
+    }
   },
 
   /**
@@ -76,13 +119,24 @@ const UserService = {
     userId: string,
     updateData: Partial<IUser>,
   ): Promise<IUser> => {
-    const user = await User.findByIdAndUpdate(userId, updateData, {
-      new: true,
-    });
-    if (!user) {
-      throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
+    try {
+      const user = await User.findByIdAndUpdate(userId, updateData, {
+        new: true,
+        runValidators: true,
+      });
+      if (!user) {
+        throw new ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
+      }
+      return user;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
-    return user;
   },
 
   /**
@@ -92,11 +146,21 @@ const UserService = {
    * @throws ApiError if no user is found with the provided ID
    */
   deleteUser: async (userId: string): Promise<IUser> => {
-    const user = await User.findByIdAndDelete(userId);
-    if (!user) {
-      throw ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
+    try {
+      const user = await User.findByIdAndDelete(userId);
+      if (!user) {
+        throw new ApiError(httpStatus.NOT_FOUND, "No user found with this ID");
+      }
+      return user;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      );
     }
-    return user;
   },
 };
 

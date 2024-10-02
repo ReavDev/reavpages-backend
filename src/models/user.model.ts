@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Query, UpdateQuery } from "mongoose";
 import bcrypt from "bcryptjs";
 import { IUser, IUserModel } from "../types/user.types";
 import toJSON from "./plugins/toJSON.plugin";
@@ -37,14 +37,18 @@ const userSchema: Schema<IUser> = new Schema(
       type: Boolean,
       default: false,
     },
-    twoFAEnabled: {
+    phone: {
+      type: String,
+      required: false,
+    },
+    twoFaEnabled: {
       type: Boolean,
       default: false,
     },
-    twoFAType: {
+    twoFaType: {
       type: String,
-      enum: ["email", "phone"],
-      default: "email",
+      enum: ["phone", "thirdParty"],
+      default: "phone",
     },
     role: {
       type: String,
@@ -60,6 +64,21 @@ const userSchema: Schema<IUser> = new Schema(
 // Apply the plugins to the user schema
 userSchema.plugin(toJSON);
 userSchema.plugin(paginate);
+
+/**
+ * Checks if the provided email is already taken by another user.
+ *
+ * @param email - The email address to check.
+ * @param excludeUserId - An optional user ID to exclude from the check (useful when updating a user).
+ * @returns A promise that resolves to `true` if the email is taken, otherwise `false`.
+ */
+userSchema.statics.isEmailTaken = async function (
+  email: string,
+  excludeUserId?: mongoose.Types.ObjectId,
+): Promise<boolean> {
+  const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
+  return !!user;
+};
 
 /**
  * Compares the provided password with the user's stored hashed password.
@@ -81,8 +100,40 @@ userSchema.methods.isPasswordMatch = async function (
  */
 userSchema.pre<IUser>("save", async function (next) {
   if (this.isModified("password")) {
-    this.password = await bcrypt.hash(this.password, 8);
+    this.password = await bcrypt.hash(this.password, 10);
   }
+  next();
+});
+
+/**
+ * Pre-update middleware to hash the password before updating the user document if the password field is modified.
+ *
+ * @param next - The callback function to pass control to the next middleware.
+ */
+userSchema.pre<Query<IUser, IUser>>("updateOne", async function (next) {
+  const update = (this.getUpdate() as UpdateQuery<IUser>) || {};
+
+  if (update.password) {
+    update.password = await bcrypt.hash(update.password, 10);
+  }
+
+  this.setUpdate(update);
+  next();
+});
+
+/**
+ * Pre-update middleware to hash the password before updating the user document if the password field is modified.
+ *
+ * @param next - The callback function to pass control to the next middleware.
+ */
+userSchema.pre<Query<IUser, IUser>>("findOneAndUpdate", async function (next) {
+  const update = (this.getUpdate() as UpdateQuery<IUser>) || {};
+
+  if (update.password) {
+    update.password = await bcrypt.hash(update.password, 10);
+  }
+
+  this.setUpdate(update);
   next();
 });
 

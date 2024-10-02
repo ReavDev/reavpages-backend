@@ -32,34 +32,45 @@ export const adminGuard = async (
     // If no token is provided, throw an unauthorized error
     if (!token) {
       return next(
-        ApiError(httpStatus.UNAUTHORIZED, "Access token not provided"),
+        new ApiError(httpStatus.UNAUTHORIZED, "Access token not provided"),
       );
     }
 
     // Verify the token and extract the payload
-    const payload = await TokenService.verifyToken(token, "access");
+    const payload = await TokenService.verifyToken(token, "access", "jwt");
 
-    // If the payload doesn't contain userEmail, throw a User not found error
-    if (!payload.userEmail) {
-      return next(ApiError(httpStatus.NOT_FOUND, "User not found"));
+    if (typeof payload === "boolean") {
+      if (!payload) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
+      }
+      throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token type");
+    }
+
+    if (!payload || !payload.sub) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Invalid token payload");
     }
 
     // Fetch the user by their email from the payload
-    const user = await UserService.getUserByEmail(payload.userEmail);
+    const user = await UserService.getUserById(payload.sub);
 
     // Check if the user has the 'admin' role
     if (user.role !== "admin") {
       return next(
-        ApiError(httpStatus.FORBIDDEN, "Forbidden: Admin access required"),
+        new ApiError(httpStatus.FORBIDDEN, "Forbidden: Admin access required"),
       );
     }
 
     // Proceed with the request
     next();
-  } catch {
-    // If any error occurs, throw an internal server error
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return next(error);
+    }
     return next(
-      ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Something went wrong"),
+      new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "An unexpected error occurred",
+      ),
     );
   }
 };

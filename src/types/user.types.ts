@@ -8,7 +8,7 @@ export interface IUser extends Document {
    * The unique identifier of the user.
    * @example "60c72b2f9b1e8b001f8e4e67"
    */
-  id: string;
+  _id: string;
 
   /**
    * The first name of the user.
@@ -42,24 +42,24 @@ export interface IUser extends Document {
   isEmailVerified: boolean;
 
   /**
+   * The phone number of the user.
+   * Must be a valid phone number format.
+   * @example "+1234567890"
+   */
+  phone: string;
+
+  /**
    * Indicates whether two-factor authentication (2FA) is enabled for the user.
    * @example true
    */
-  twoFAEnabled: boolean;
+  twoFaEnabled: boolean;
 
   /**
    * The type of two-factor authentication used by the user.
-   * Possible values are "email" or "phone".
-   * @example "email"
+   * Possible values are "phone" or "thirdParty".
+   * @example "phone"
    */
-  twoFAType: "email" | "phone";
-
-  /**
-   * The secret key used for two-factor authentication.
-   * This is often a base32 encoded string.
-   * @example "JBSWY3DPEHPK3PXP"
-   */
-  twoFASecret: string;
+  twoFaType: "phone" | "thirdParty";
 
   /**
    * The role of the user.
@@ -75,6 +75,20 @@ export interface IUser extends Document {
    * @throws {Error} - Throws an error if password comparison fails.
    */
   isPasswordMatch(password: string): Promise<boolean>;
+
+  /**
+   * The date and time when the token document was created.
+   * Automatically added by Mongoose when `timestamps: true` is enabled.
+   * @type {Date}
+   */
+  createdAt: Date;
+
+  /**
+   * The date and time when the token document was last updated.
+   * Automatically updated by Mongoose when the document is modified, provided `timestamps: true`.
+   * @type {Date}
+   */
+  updatedAt: Date;
 }
 
 /**

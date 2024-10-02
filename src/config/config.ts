@@ -32,42 +32,65 @@ const envVarsSchema = Joi.object({
     .description("Secret key for administrative functions"),
 
   /**
-   * JWT secret key for signing tokens.
+   * Token secret key for signing tokens.
    */
-  JWT_SECRET: Joi.string()
+  TOKEN_SECRET: Joi.string()
     .required()
-    .description("The secret key used to sign JWT tokens"),
+    .description("The secret key used to sign tokens"),
 
   /**
-   * JWT access token expiration time in minutes.
+   * Token access expiration time in minutes.
    */
-  JWT_ACCESS_EXPIRATION_MINUTES: Joi.number()
+  TOKEN_ACCESS_EXPIRATION_MINUTES: Joi.number()
     .default(30)
     .description("The number of minutes after which access tokens expire"),
 
   /**
-   * JWT refresh token expiration time in days.
+   * Token refresh expiration time in days.
    */
-  JWT_REFRESH_EXPIRATION_DAYS: Joi.number()
+  TOKEN_REFRESH_EXPIRATION_DAYS: Joi.number()
     .default(30)
     .description("The number of days after which refresh tokens expire"),
 
   /**
-   * JWT reset password token expiration time in minutes.
+   * Token OTP expiration time in minutes.
    */
-  JWT_RESET_PASSWORD_EXPIRATION_MINUTES: Joi.number()
+  TOKEN_OTP_EXPIRATION_MINUTES: Joi.number()
     .default(10)
+    .description("The number of minutes after which OTP expires"),
+
+  /**
+   * Maximum number of OTP requests allowed.
+   */
+  TOKEN_OTP_MAX_REQUESTS: Joi.number()
+    .default(5)
     .description(
-      "The number of minutes after which reset password tokens expire",
+      "The maximum number of OTP requests allowed within the time window",
     ),
 
   /**
-   * JWT email verification token expiration time in minutes.
+   * Time window for OTP requests in minutes.
    */
-  JWT_VERIFY_EMAIL_EXPIRATION_MINUTES: Joi.number()
+  TOKEN_OTP_REQUESTS_WINDOW: Joi.number()
     .default(10)
+    .description("The time window in minutes for OTP requests"),
+
+  /**
+   * Cooldown time in minutes after hitting the maximum OTP requests.
+   */
+  TOKEN_OTP_COOLDOWN_TIME: Joi.number()
+    .default(1)
     .description(
-      "The number of minutes after which email verification tokens expire",
+      "The cooldown time in minutes after hitting the maximum OTP requests",
+    ),
+
+  /**
+   * Extended cooldown time in minutes for additional blocking.
+   */
+  TOKEN_OTP_EXTENDED_COOLDOWN_TIME: Joi.number()
+    .default(60)
+    .description(
+      "The extended cooldown time in minutes for additional blocking",
     ),
 
   /**
@@ -104,6 +127,27 @@ const envVarsSchema = Joi.object({
   EMAIL_FROM: Joi.string().description(
     "The 'from' email address for outgoing emails",
   ),
+
+  /**
+   * Twilio SID for messaging service.
+   */
+  TWILIO_SID: Joi.string()
+    .required()
+    .description("Twilio Account SID for messaging"),
+
+  /**
+   * Twilio Auth Token for messaging service.
+   */
+  TWILIO_AUTH_TOKEN: Joi.string()
+    .required()
+    .description("Twilio authentication token for messaging"),
+
+  /**
+   * Phone number used as the 'from' number in messages.
+   */
+  MESSAGE_FROM: Joi.string()
+    .required()
+    .description("The 'from' phone number for messaging service"),
 }).unknown();
 
 /**
@@ -148,43 +192,67 @@ const config = {
   adminSecret: process.env["ADMIN_SECRET"] as string,
 
   /**
-   * JWT settings.
+   * Token settings.
    */
-  jwt: {
+  token: {
     /**
-     * JWT secret key for signing tokens.
+     * Token secret key for signing tokens.
      */
-    secret: process.env["JWT_SECRET"] as string,
+    secret: process.env["TOKEN_SECRET"] as string,
 
     /**
-     * JWT access token expiration time in minutes.
+     * Token access expiration time in minutes.
      */
     accessExpirationMinutes: parseInt(
-      process.env["JWT_ACCESS_EXPIRATION_MINUTES"] as string,
+      process.env["TOKEN_ACCESS_EXPIRATION_MINUTES"] as string,
       10,
     ),
 
     /**
-     * JWT refresh token expiration time in days.
+     * Token refresh expiration time in days.
      */
     refreshExpirationDays: parseInt(
-      process.env["JWT_REFRESH_EXPIRATION_DAYS"] as string,
+      process.env["TOKEN_REFRESH_EXPIRATION_DAYS"] as string,
       10,
     ),
 
     /**
-     * JWT reset password token expiration time in minutes.
+     * Token OTP expiration time in minutes.
      */
-    resetPasswordExpirationMinutes: parseInt(
-      process.env["JWT_RESET_PASSWORD_EXPIRATION_MINUTES"] as string,
+    otpExpirationMinutes: parseInt(
+      process.env["TOKEN_OTP_EXPIRATION_MINUTES"] as string,
       10,
     ),
 
     /**
-     * JWT email verification token expiration time in minutes.
+     * Maximum number of OTP requests allowed.
      */
-    verifyEmailExpirationMinutes: parseInt(
-      process.env["JWT_VERIFY_EMAIL_EXPIRATION_MINUTES"] as string,
+    otpMaxRequests: parseInt(
+      process.env["TOKEN_OTP_MAX_REQUESTS"] as string,
+      10,
+    ),
+
+    /**
+     * Time window for OTP requests in minutes.
+     */
+    otpRequestsWindow: parseInt(
+      process.env["TOKEN_OTP_REQUESTS_WINDOW"] as string,
+      10,
+    ),
+
+    /**
+     * Cooldown time in minutes after hitting the maximum OTP requests.
+     */
+    otpCooldownTime: parseInt(
+      process.env["TOKEN_OTP_COOLDOWN_TIME"] as string,
+      10,
+    ),
+
+    /**
+     * Extended cooldown time in minutes for additional blocking.
+     */
+    otpExtendedCooldownTime: parseInt(
+      process.env["TOKEN_OTP_EXTENDED_COOLDOWN_TIME"] as string,
       10,
     ),
   },
@@ -227,6 +295,24 @@ const config = {
      * Email address used as the 'from' address in emails.
      */
     from: process.env["EMAIL_FROM"] as string,
+  },
+
+  /**
+   * Messaging settings.
+   */
+  messaging: {
+    /**
+     * Twilio SID.
+     */
+    sid: process.env["TWILIO_SID"] as string,
+    /**
+     * Twilio auth token.
+     */
+    authToken: process.env["TWILIO_AUTH_TOKEN"] as string,
+    /**
+     * Phone number used as the 'from' number in messages
+     */
+    from: process.env["MESSAGE_FROM"] as string,
   },
 };
 
