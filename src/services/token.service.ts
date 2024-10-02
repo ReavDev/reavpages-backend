@@ -347,91 +347,82 @@ const TokenService = {
   },
 
   /**
-   * Check if OTP generation is allowed based on rate limiting
-   * @param userId - The ID of the user
-   * @returns Promise resolving to true if allowed, false otherwise
-   */
-  canGenerateOtp: async (userId: string): Promise<boolean> => {
-    console.log("pinged");
-    
-    const now = moment();
-
-    // Find existing OTP for the user
-    const otpTokenDoc = await Token.findOne({
-      userId,
-      type: "otp",
-    });
-
-    // No OTP doc found, allow OTP generation
-    if (!otpTokenDoc) {
-      return true;
-    }
-
-    if (otpTokenDoc.otpRequestCount >= config.token.otpMaxRequests) {
-      return false;
-    }
-
-    // Calculate time since creation and last update
-    const createdAt = moment(otpTokenDoc.createdAt);
-    const updatedAt = moment(otpTokenDoc.updatedAt);
-    const timeSinceCreation = now.diff(createdAt, "minutes");
-    const timeSinceLastUpdate = now.diff(updatedAt, "minutes");
-
-    // Check if the user is in cooldown (1 minute for recent update, 1 hour for extended rate-limiting)
-    if (timeSinceLastUpdate <= otpTokenDoc.otpCooldownPeriod) {
-      return false;
-    }
-
-    // User has requested >= 5 OTPs within 10 minutes, enforce 1 hour cooldown
-    if (
-      otpTokenDoc.otpRequestCount >= config.token.otpMaxRequests &&
-      timeSinceCreation <= config.token.otpRequestsWindow
-    ) {
-      otpTokenDoc.otpCooldownPeriod = config.token.otpExtendedCooldownTime;
-      await otpTokenDoc.save();
-      return false;
-    }
-
-    // Reset the cooldown period to initial cooldown
-    otpTokenDoc.otpCooldownPeriod = config.token.otpCooldownTime;
-    await otpTokenDoc.save();
-    return true;
-  },
-
-  /**
-   * Generate OTP for email verification or password reset
+   * Generate OTP for email verification or password reset with rate limiting
    * @param id - User's id
    * @param type - OTP type (resetPassword, verifyEmail)
    * @returns Generated OTP
    */
   generateOTP: async (tokenData: Partial<IToken>): Promise<string> => {
-    const { userId, type } = tokenData;
-
-    if (!tokenData || !userId) {
-      throw new ApiError(httpStatus.BAD_REQUEST, "Token data not provided");
-    }
-
     try {
+      const { userId, type } = tokenData;
+
+      if (!tokenData || !userId) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Token data not provided");
+      }
+
       const user = await userService.getUserById(userId.toString());
 
       if (!user) {
         throw new ApiError(httpStatus.NOT_FOUND, "User not found");
       }
 
-      const canGenerate = await TokenService.canGenerateOtp(userId.toString());
+      // Find existing OTP for the user
+      const existingOtpToken = await Token.findOne({
+        userId: user._id.toString(),
+        type,
+        tokenType: "otp",
+      });
 
-      if (!canGenerate) {
-        throw new ApiError(
-          httpStatus.FORBIDDEN,
-          "Too many OTP requests. Please try again later.",
+      // Check rate limiting
+      if (existingOtpToken) {
+        const now = moment();
+        const createdAt = moment(existingOtpToken.createdAt);
+        const updatedAt = moment(existingOtpToken.updatedAt);
+        const timeSinceCreation = now.diff(createdAt, "minutes");
+        const timeSinceLastUpdate = now.diff(updatedAt, "minutes");
+
+        // Check if user is in cooldown period
+        if (timeSinceLastUpdate <= existingOtpToken.otpCooldownPeriod) {
+          throw new ApiError(
+            httpStatus.TOO_MANY_REQUESTS,
+            "Too many OTP requests. Please try again later.",
+          );
+        }
+
+        // Check if max requests reached within the window
+        if (existingOtpToken.otpRequestCount >= config.token.otpMaxRequests) {
+          // Check if the time since creation exceeds the request window
+          if (timeSinceCreation >= config.token.otpRequestsWindow) {
+            // Apply extended cooldown if the request window has passed
+            await TokenService.updateToken(existingOtpToken._id.toString(), {
+              otpCooldownPeriod: config.token.otpExtendedCooldownTime,
+            });
+          }
+          throw new ApiError(
+            httpStatus.TOO_MANY_REQUESTS,
+            "Too many OTP requests. Please try again later.",
+          );
+        }
+
+        // If the extended cooldown has passed, delete the token
+        const timeSinceExtendedCooldown = now.diff(
+          moment(existingOtpToken.createdAt),
+          "minutes",
         );
+
+        if (
+          timeSinceExtendedCooldown >=
+          config.token.otpExtendedCooldownTime + config.token.otpRequestsWindow
+        ) {
+          await TokenService.deleteToken(existingOtpToken._id.toString());
+        }
       }
 
+      // Generate new OTP
       const otpExpires = moment().add(
         config.token.otpExpirationMinutes,
         "minutes",
       );
-
       const otpToken = TokenService.generateToken({
         userId: new mongoose.Types.ObjectId(user._id),
         expires: otpExpires.toDate(),
@@ -439,27 +430,13 @@ const TokenService = {
         tokenType: "otp",
       });
 
-      // Find an existing OTP document
-      const existingOtpDoc = await Token.findOne({
-        userId: user._id.toString(),
-        type,
-        tokenType: "otp",
-      });
-
-      if (existingOtpDoc) {
-        const updatedOtpRequestCount = existingOtpDoc.otpRequestCount + 1;
-        const updateData: Partial<IToken> = {
+      if (existingOtpToken) {
+        await TokenService.updateToken(existingOtpToken._id.toString(), {
           token: otpToken,
-          expires: moment()
-            .add(config.token.otpExpirationMinutes, "minutes")
-            .toDate(),
-          otpRequestCount: updatedOtpRequestCount,
-        };
-
-        await TokenService.updateToken(
-          existingOtpDoc._id.toString(),
-          updateData,
-        );
+          expires: otpExpires.toDate(),
+          otpRequestCount: existingOtpToken.otpRequestCount + 1,
+          otpCooldownPeriod: config.token.otpCooldownTime,
+        });
       } else {
         await TokenService.createToken({
           token: otpToken,
