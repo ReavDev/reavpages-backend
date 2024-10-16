@@ -4,7 +4,7 @@
   "description": "Backend Application for ReavPages",
   "main": "dist/app.js",
   "scripts": {
-    "dev": "ts-node-dev --files src/app.ts",
+    "dev": "doppler run --config dev -- ts-node-dev --files src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
     "typecheck": "tsc --noEmit && echo Type Checks successfuly completed!",
