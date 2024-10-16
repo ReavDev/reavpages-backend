@@ -22,6 +22,7 @@ const AuthController = {
       );
 
       res.status(httpStatus.CREATED).json({
+        status: "success",
         message:
           user.role === "superAdmin"
             ? "Super admin created successfully, please check your mail for verification!"
@@ -54,7 +55,17 @@ const AuthController = {
     try {
       const { email, password } = req.body;
       const { user, tokens } = await AuthService.login(email, password);
-      res.status(httpStatus.OK).json({ user, tokens });
+      res.status(httpStatus.OK).json({
+        status: "success",
+        message:
+          user.twoFaEnabled === true
+            ? "User logged in successfully, kindly input 2FA code!"
+            : "User logged in successfully!",
+        data: {
+          user,
+          tokens,
+        },
+      });
     } catch (error) {
       if (error instanceof ApiError) {
         return next(error);
@@ -78,7 +89,7 @@ const AuthController = {
     try {
       const { email } = req.body;
       const result = await AuthService.resetPassword(email);
-      res.status(httpStatus.OK).json(result);
+      res.status(httpStatus.OK).json({ status: "success", ...result });
     } catch (error) {
       if (error instanceof ApiError) {
         return next(error);
@@ -107,7 +118,7 @@ const AuthController = {
         newPassword,
       );
 
-      res.status(httpStatus.OK).json(result);
+      res.status(httpStatus.OK).json({ status: "success", ...result });
     } catch (error) {
       if (error instanceof ApiError) {
         return next(error);
@@ -131,7 +142,7 @@ const AuthController = {
     try {
       const { token } = req.body;
       const result = await AuthService.verifyEmail(token);
-      res.status(httpStatus.OK).json(result);
+      res.status(httpStatus.OK).json({ status: "success", ...result });
     } catch (error) {
       if (error instanceof ApiError) {
         return next(error);
@@ -155,7 +166,7 @@ const AuthController = {
     try {
       const { email, token } = req.body;
       const result = await AuthService.enableTwoFa(email, token);
-      res.status(httpStatus.OK).json(result);
+      res.status(httpStatus.OK).json({ status: "success", ...result });
     } catch (error) {
       if (error instanceof ApiError) {
         return next(error);
@@ -179,7 +190,7 @@ const AuthController = {
     try {
       const { email, token } = req.body;
       const result = await AuthService.disableTwoFa(email, token);
-      res.status(httpStatus.OK).json(result);
+      res.status(httpStatus.OK).json({ status: "success", ...result });
     } catch (error) {
       if (error instanceof ApiError) {
         return next(error);
@@ -203,7 +214,7 @@ const AuthController = {
     try {
       const { email } = req.body;
       const result = await AuthService.requestOtp(email);
-      res.status(httpStatus.OK).json(result);
+      res.status(httpStatus.OK).json({ status: "success", ...result });
     } catch (error) {
       if (error instanceof ApiError) {
         return next(error);
@@ -227,7 +238,7 @@ const AuthController = {
     try {
       const { email, token } = req.body;
       const result = await AuthService.verifyOtp(email, token);
-      res.status(httpStatus.OK).json(result);
+      res.status(httpStatus.OK).json({ status: "success", ...result });
     } catch (error) {
       if (error instanceof ApiError) {
         return next(error);
